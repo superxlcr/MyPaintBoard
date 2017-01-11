@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">MyPaintBoard</string>
+    <string name="login_text">请填入登录信息</string>
+    <string name="account">账号</string>
+    <string name="password">密码</string>
+    <string name="login">登录</string>
+    <string name="register">注册</string>
+    <string name="register_text">请填入注册信息</string>
+    <string name="nickname">昵称</string>
+    <string name="confirm">确认</string>
+    <string name="cancel">取消</string>
+</resources>

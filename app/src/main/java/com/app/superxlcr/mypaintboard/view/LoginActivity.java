@@ -1,0 +1,158 @@
+package com.app.superxlcr.mypaintboard.view;
+
+import android.app.Dialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import com.app.superxlcr.mypaintboard.R;
+import com.app.superxlcr.mypaintboard.controller.UserController;
+import com.app.superxlcr.mypaintboard.model.Protocol;
+import com.app.superxlcr.mypaintboard.model.User;
+import com.app.superxlcr.mypaintboard.tools.LoadingDialogUtils;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.lang.ref.SoftReference;
+
+/**
+ * Created by superxlcr on 2017/1/10.
+ * 登录界面
+ */
+
+public class LoginActivity extends AppCompatActivity {
+
+    private static MyHandler handler;
+
+    private EditText accountEt;
+    private EditText passwordEt;
+    private Button loginBtn;
+    private Button registerBtn;
+    private Dialog dialog;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login);
+        handler = new MyHandler(this);
+        accountEt = (EditText) findViewById(R.id.account);
+        passwordEt = (EditText) findViewById(R.id.password);
+        loginBtn = (Button) findViewById(R.id.login);
+        loginBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (checkAccountAndPassword()) {
+                    // 登录
+                    String username = accountEt.getText().toString();
+                    String password = passwordEt.getText().toString();
+//                    if (UserController.getInstance().login(LoginActivity.this, handler, username, password)) {
+//                        // TODO 可以取消，新时间覆盖问题
+//                        dialog = LoadingDialogUtils.showDialog(LoginActivity.this, "登录中...", false);
+//                    }
+                }
+            }
+        });
+        registerBtn = (Button) findViewById(R.id.register);
+        registerBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 注册，打开注册界面
+                Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+                startActivity(intent);
+                finish();
+            }
+        });
+    }
+
+    public Dialog getDialog() {
+        return dialog;
+    }
+
+    private boolean checkAccountAndPassword() {
+        if (accountEt != null && passwordEt != null) {
+            String account = accountEt.getText().toString();
+            if (account.isEmpty()) {
+                Toast.makeText(this, "请填入您的账号", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            String password = passwordEt.getText().toString();
+            if (password.isEmpty()) {
+                Toast.makeText(this, "请填入您的密码", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    static class MyHandler extends Handler {
+
+        private SoftReference<LoginActivity> reference;
+
+        public MyHandler(LoginActivity activity) {
+            reference = new SoftReference<LoginActivity>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            LoginActivity activity = reference.get();
+            if (activity != null && msg != null && msg.obj != null && msg.obj instanceof Protocol) {
+                Protocol protocol = (Protocol)msg.obj;
+                if (protocol.getOrder() == Protocol.LOGIN) { // 登录
+                    JSONArray content = protocol.getContent();
+                    // 关闭等待进度条
+                    if (activity.getDialog() != null) {
+                        LoadingDialogUtils.closeDialog(activity.getDialog());
+                    }
+                    // 处理登录信息
+                    try {
+                        int stateCode = content.getInt(0);
+                        switch (stateCode) {
+                            case Protocol.LOGIN_ALREADY_LOGIN: { // 已登录
+                                showToast("该用户已经登录");
+                                break;
+                            }
+                            case Protocol.LOGIN_NO_USERNAME: { // 非法用户名
+                                showToast("当前用户名错误");
+                                break;
+                            }
+                            case Protocol.LOGIN_SUCCESS: { // 登录成功
+                                // 保存用户数据
+                                String username = content.getString(1);
+                                String nickname = content.getString(2);
+                                UserController.getInstance().setUser(new User(username, "*", nickname));
+                                // 显示信息
+                                showToast("登录成功");
+                                // TODO 界面跳转
+                                activity.finish();
+                                break;
+                            }
+                            case Protocol.LOGIN_UNKNOW_PRO: { // 未知错误
+                                showToast("遇到未知错误");
+                                break;
+                            }
+                            case Protocol.LOGIN_WRONG_PASSWORD: { // 密码错误
+                                showToast("密码错误");
+                                break;
+                            }
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        showToast("协议内容解析错误");
+                    }
+                }
+            }
+        }
+
+        private void showToast(String msg) {
+            Toast.makeText(reference.get(), msg, Toast.LENGTH_SHORT).show();
+        }
+    }
+}
