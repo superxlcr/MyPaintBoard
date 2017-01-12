@@ -12,12 +12,14 @@ public class Protocol {
 
 	// 服务器端口
 	public static final int PORT = 9999;
+	// TODO 心跳包间隔
+    public static long HEART_BEAT_PERIOD = 5000;
 
 	// 指令类型
 
 	// 登录
 	// c to s: username + password
-	// s to c: stateCode + (username + nickname)(if success)
+	// s to c: stateCode + (id + username + nickname)(if success)
 	public static final int LOGIN = 0;
 	public static final int LOGIN_SUCCESS = 0; // 成功
 	public static final int LOGIN_NO_USERNAME = LOGIN_SUCCESS + 1; // 非法用户名
@@ -25,9 +27,9 @@ public class Protocol {
 	public static final int LOGIN_UNKNOW_PRO = LOGIN_WRONG_PASSWORD + 1; // 未知错误
 	public static final int LOGIN_ALREADY_LOGIN = LOGIN_UNKNOW_PRO + 1; // 用户已在线
 
-	// 注册（无登录功能）
+	// 注册
 	// c to s: username + password + nickname
-	// s to c: stateCode + (username + nickname)(if success)
+	// s to c: stateCode + (id + username + nickname)(if success)
 	public static final int REGISTER = LOGIN + 1;
 	public static final int REGISTER_SUCCESS = 0; // 成功
 	public static final int REGISTER_REPEAT_USERNAME = REGISTER_SUCCESS + 1; // 重复用户名
@@ -35,7 +37,7 @@ public class Protocol {
 	public static final int REGISTER_UNKNOW_PRO = REGISTER_REPEAT_NICKNAME + 1; // 未知错误
 
 	// 修改资料
-	// c to s: username + password + nickname
+	// c to s: id + username + password + nickname
 	// s to c: stateCode
 	public static final int EDIT_INFO = REGISTER + 1;
 	public static final int EDIT_INFO_SUCCESS = 0; // 成功

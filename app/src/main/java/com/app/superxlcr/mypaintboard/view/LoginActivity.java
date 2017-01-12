@@ -1,17 +1,20 @@
 package com.app.superxlcr.mypaintboard.view;
 
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.app.superxlcr.mypaintboard.R;
+import com.app.superxlcr.mypaintboard.controller.CommunicationController;
 import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.User;
@@ -35,12 +38,18 @@ public class LoginActivity extends AppCompatActivity {
     private EditText passwordEt;
     private Button loginBtn;
     private Button registerBtn;
-    private Dialog dialog;
+
+    private Dialog dialog; // 等待进度条
+    private long time = 0; // 最后发送消息的时间
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        // 初始化服务器连接
+        CommunicationController.getInstance(this).connectServer();
+
         handler = new MyHandler(this);
         accountEt = (EditText) findViewById(R.id.account);
         passwordEt = (EditText) findViewById(R.id.password);
@@ -52,10 +61,22 @@ public class LoginActivity extends AppCompatActivity {
                     // 登录
                     String username = accountEt.getText().toString();
                     String password = passwordEt.getText().toString();
-//                    if (UserController.getInstance().login(LoginActivity.this, handler, username, password)) {
-//                        // TODO 可以取消，新时间覆盖问题
-//                        dialog = LoadingDialogUtils.showDialog(LoginActivity.this, "登录中...", false);
-//                    }
+                    // 更新发送时间
+                    time = System.currentTimeMillis();
+                    // 显示进度条，可以取消
+                    dialog = LoadingDialogUtils.showDialog(LoginActivity.this, "登录中...", true);
+                    dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialogInterface) {
+                            // 发送时间加一，导致遗留协议失效
+                            time += 1;
+                            LoadingDialogUtils.closeDialog(dialog);
+                        }
+                    });
+                    if (!UserController.getInstance().login(LoginActivity.this, handler, time, username, password)) {
+                        // 发送失败直接关闭进度条
+                        LoadingDialogUtils.closeDialog(dialog);
+                    }
                 }
             }
         });
@@ -73,6 +94,10 @@ public class LoginActivity extends AppCompatActivity {
 
     public Dialog getDialog() {
         return dialog;
+    }
+
+    public long getTime() {
+        return time;
     }
 
     private boolean checkAccountAndPassword() {
@@ -105,7 +130,8 @@ public class LoginActivity extends AppCompatActivity {
             LoginActivity activity = reference.get();
             if (activity != null && msg != null && msg.obj != null && msg.obj instanceof Protocol) {
                 Protocol protocol = (Protocol)msg.obj;
-                if (protocol.getOrder() == Protocol.LOGIN) { // 登录
+                if (protocol.getOrder() == Protocol.LOGIN && activity.getTime() <= protocol.getTime()) {
+                    // 登录指令且消息时间有效
                     JSONArray content = protocol.getContent();
                     // 关闭等待进度条
                     if (activity.getDialog() != null) {
@@ -120,18 +146,19 @@ public class LoginActivity extends AppCompatActivity {
                                 break;
                             }
                             case Protocol.LOGIN_NO_USERNAME: { // 非法用户名
-                                showToast("当前用户名错误");
+                                showToast("用户名不存在");
                                 break;
                             }
                             case Protocol.LOGIN_SUCCESS: { // 登录成功
                                 // 保存用户数据
-                                String username = content.getString(1);
-                                String nickname = content.getString(2);
-                                UserController.getInstance().setUser(new User(username, "*", nickname));
+                                int id = content.getInt(1);
+                                String username = content.getString(2);
+                                String nickname = content.getString(3);
+                                UserController.getInstance().setUser(new User(id, username, "*", nickname));
                                 // 显示信息
                                 showToast("登录成功");
                                 // TODO 界面跳转
-                                activity.finish();
+//                                activity.finish();
                                 break;
                             }
                             case Protocol.LOGIN_UNKNOW_PRO: { // 未知错误

@@ -1,11 +1,11 @@
 package com.app.superxlcr.mypaintboard.view;
 
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -37,10 +37,12 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText nicknameEt;
     private Button confirmBtn;
     private Button cancelBtn;
-    private Dialog dialog;
+
+    private Dialog dialog; // 等待进度条
+    private long time = 0; // 最后发送消息的时间
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
         handler = new MyHandler(this);
@@ -56,10 +58,22 @@ public class RegisterActivity extends AppCompatActivity {
                     String username = accountEt.getText().toString();
                     String password = passwordEt.getText().toString();
                     String nickname = nicknameEt.getText().toString();
-//                    if (UserController.getInstance().register(RegisterActivity.this, handler, username, password, nickname)) {
-//                        // TODO 可以取消，新时间覆盖问题
-//                        dialog = LoadingDialogUtils.showDialog(RegisterActivity.this, "注册中...", false);
-//                    }
+                    // 更新发送时间
+                    time = System.currentTimeMillis();
+                    // 显示进度条，可以取消
+                    dialog = LoadingDialogUtils.showDialog(RegisterActivity.this, "注册中...", true);
+                    dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialogInterface) {
+                            // 发送时间加一，导致遗留协议失效
+                            time += 1;
+                            LoadingDialogUtils.closeDialog(dialog);
+                        }
+                    });
+                    if (UserController.getInstance().register(RegisterActivity.this, handler, time, username, password, nickname)) {
+                        // 发送失败，关闭进度条
+                        LoadingDialogUtils.closeDialog(dialog);
+                    }
                 }
             }
         });
@@ -77,6 +91,10 @@ public class RegisterActivity extends AppCompatActivity {
 
     public Dialog getDialog() {
         return dialog;
+    }
+
+    public long getTime() {
+        return time;
     }
 
     private boolean checkInput() {
@@ -113,8 +131,9 @@ public class RegisterActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             RegisterActivity activity = reference.get();
             if (activity != null && msg != null && msg.obj != null && msg.obj instanceof Protocol) {
-                Protocol protocol = (Protocol)msg.obj;
-                if (protocol.getOrder() == Protocol.REGISTER) { // 注册
+                Protocol protocol = (Protocol) msg.obj;
+                if (protocol.getOrder() == Protocol.REGISTER && activity.getTime() <= protocol.getTime()) {
+                    // 注册指令且消息时间有效
                     JSONArray content = protocol.getContent();
                     // 关闭等待进度条
                     if (activity.getDialog() != null) {
@@ -134,13 +153,14 @@ public class RegisterActivity extends AppCompatActivity {
                             }
                             case Protocol.REGISTER_SUCCESS: { // 注册成功
                                 // 保存用户数据
-                                String username = content.getString(1);
-                                String nickname = content.getString(2);
-                                UserController.getInstance().setUser(new User(username, "*", nickname));
+                                int id = content.getInt(1);
+                                String username = content.getString(2);
+                                String nickname = content.getString(3);
+                                UserController.getInstance().setUser(new User(id, username, "*", nickname));
                                 // 显示信息
                                 showToast("注册成功");
                                 // TODO 界面跳转
-                                activity.finish();
+//                                activity.finish();
                             }
                             case Protocol.REGISTER_UNKNOW_PRO: { // 未知错误
                                 showToast("遇到未知错误");

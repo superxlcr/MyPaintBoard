@@ -33,9 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class CommunicationController {
 
     // 服务器IP
-    public static String SERVER_IP = "192.168.1.108";
-    // 心跳包间隔
-    public static long HEART_BEAT_PERIOD = 5000;
+    public static String SERVER_IP = "192.168.1.116";
 
     private static String TAG = CommunicationController.class.getSimpleName();
 
@@ -60,7 +58,6 @@ public class CommunicationController {
     private CommunicationController(Context context) {
         this.context = context.getApplicationContext();
         this.listenerList = new CopyOnWriteArrayList<>();
-        this.timer = new Timer();
     }
 
     /**
@@ -87,58 +84,60 @@ public class CommunicationController {
                 // 连接服务器
                 try {
                     socket = new Socket(SERVER_IP, Protocol.PORT);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    socket = null;
-                }
-                Log.d(TAG, "连接服务器成功");
+                    Log.d(TAG, "连接服务器成功");
 
-                // 定时器子线程，开始发送心跳包
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (socket != null) {
-                                // 发送心跳信息
-                                Writer writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
-                                JSONArray jsonArray = new JSONArray();
-                                Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(), jsonArray);
-                                writer.write(sendProtocol.getJsonStr());
-                                writer.flush();
-                            } else {
-                                // 连接中断终止任务
+                    // 定时器子线程，开始发送心跳包
+                    timer = new Timer();
+                    timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            try {
+                                if (socket != null) {
+                                    // 发送心跳信息
+                                    Writer writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
+                                    JSONArray jsonArray = new JSONArray();
+                                    Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(), jsonArray);
+                                    writer.write(sendProtocol.getJsonStr());
+                                    writer.flush();
+                                } else {
+                                    // 连接中断终止任务
+                                    timer.cancel();
+                                }
+                            } catch (IOException e) {
+                                // 出现错误，终止定时器，关闭连接
+                                e.printStackTrace();
+                                clearSocket();
                                 timer.cancel();
                             }
-                        } catch (IOException e) {
-                            // 出现错误，终止定时器，关闭连接
-                            e.printStackTrace();
-                            clearSocket();
-                            timer.cancel();
                         }
-                    }
-                }, 0, HEART_BEAT_PERIOD);
-                Log.d(TAG, "心跳包定时器设置成功");
+                    }, 0, Protocol.HEART_BEAT_PERIOD);
+                    Log.d(TAG, "心跳包定时器设置成功");
 
-                // 开始监听信息
-                try {
-                    Reader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-                    while (socket != null) {
-                        char data[] = new char[999];
-                        int len;
-                        while ((len = reader.read(data)) != -1) {
-                            String jsonString = new String(data, 0, len);
-                            Protocol protocol = new Protocol(jsonString);
-                            // 分发处理协议内容
-                            for (ProtocolListener listener : listenerList) {
-                                if (listener.onReceive(protocol)) { // 返回true则终止传递
-                                    break;
+                    // 开始监听信息
+                    try {
+                        Reader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+                        while (socket != null) {
+                            char data[] = new char[999];
+                            int len;
+                            while ((len = reader.read(data)) != -1) {
+                                String jsonString = new String(data, 0, len);
+                                Protocol protocol = new Protocol(jsonString);
+                                Log.d(TAG, protocol.toString());
+                                // 分发处理协议内容
+                                for (ProtocolListener listener : listenerList) {
+                                    if (listener.onReceive(protocol)) { // 返回true则终止传递
+                                        break;
+                                    }
                                 }
                             }
                         }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        clearSocket();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
-                    clearSocket();
+                    socket = null;
                 }
             }
         }).start();
@@ -147,7 +146,7 @@ public class CommunicationController {
     /**
      * 清理并关闭连接
      */
-    public synchronized void clearSocket() {
+    public void clearSocket() {
         if (socket != null) {
             try {
                 socket.close();
