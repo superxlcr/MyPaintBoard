@@ -22,6 +22,7 @@ public class Room {
 	
 	// 房间绘制线段列表
 	private List<Line> lineList;
+	private int roomMemberNumber;
 
 	public Room(User admin, int id, String roomName) {
 		this.admin = admin;
@@ -40,7 +41,15 @@ public class Room {
 		}
 		return false;
 	}
-	
+
+	public int getRoomMemberNumber() {
+		return roomMemberNumber;
+	}
+
+	public void setRoomMemberNumber(int roomMemberNumber) {
+		this.roomMemberNumber = roomMemberNumber;
+	}
+
 	public User getAdmin() {
 		return admin;
 	}
