@@ -92,14 +92,6 @@ public class LoginActivity extends Activity {
         });
     }
 
-    public Dialog getDialog() {
-        return dialog;
-    }
-
-    public long getTime() {
-        return time;
-    }
-
     private boolean checkAccountAndPassword() {
         if (accountEt != null && passwordEt != null) {
             String account = accountEt.getText().toString();
@@ -130,13 +122,11 @@ public class LoginActivity extends Activity {
             LoginActivity activity = reference.get();
             if (activity != null && msg != null && msg.obj != null && msg.obj instanceof Protocol) {
                 Protocol protocol = (Protocol)msg.obj;
-                if (protocol.getOrder() == Protocol.LOGIN && activity.getTime() <= protocol.getTime()) {
+                if (protocol.getOrder() == Protocol.LOGIN && activity.time <= protocol.getTime()) {
                     // 登录指令且消息时间有效
                     JSONArray content = protocol.getContent();
                     // 关闭等待进度条
-                    if (activity.getDialog() != null) {
-                        LoadingDialogUtils.closeDialog(activity.getDialog());
-                    }
+                    LoadingDialogUtils.closeDialog(activity.dialog);
                     // 处理登录信息
                     try {
                         int stateCode = content.getInt(0);

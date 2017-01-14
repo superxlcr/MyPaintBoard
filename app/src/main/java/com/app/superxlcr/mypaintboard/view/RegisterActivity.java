@@ -91,12 +91,12 @@ public class RegisterActivity extends Activity {
         });
     }
 
-    public Dialog getDialog() {
-        return dialog;
-    }
-
-    public long getTime() {
-        return time;
+    @Override
+    public void onBackPressed() {
+        // 取消，返回登录界面
+        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     private boolean checkInput() {
@@ -134,13 +134,11 @@ public class RegisterActivity extends Activity {
             RegisterActivity activity = reference.get();
             if (activity != null && msg != null && msg.obj != null && msg.obj instanceof Protocol) {
                 Protocol protocol = (Protocol) msg.obj;
-                if (protocol.getOrder() == Protocol.REGISTER && activity.getTime() <= protocol.getTime()) {
+                if (protocol.getOrder() == Protocol.REGISTER && activity.time <= protocol.getTime()) {
                     // 注册指令且消息时间有效
                     JSONArray content = protocol.getContent();
                     // 关闭等待进度条
-                    if (activity.getDialog() != null) {
-                        LoadingDialogUtils.closeDialog(activity.getDialog());
-                    }
+                    LoadingDialogUtils.closeDialog(activity.dialog);
                     // 处理注册信息
                     try {
                         int stateCode = content.getInt(0);

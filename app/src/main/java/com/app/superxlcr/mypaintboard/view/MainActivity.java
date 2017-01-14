@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Adapter;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -23,10 +24,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.app.superxlcr.mypaintboard.R;
+import com.app.superxlcr.mypaintboard.controller.CommunicationController;
 import com.app.superxlcr.mypaintboard.controller.RoomController;
 import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.Room;
+import com.app.superxlcr.mypaintboard.model.User;
 import com.app.superxlcr.mypaintboard.tools.LoadingDialogUtils;
 
 import org.json.JSONArray;
@@ -65,9 +68,7 @@ public class MainActivity extends Activity {
 
         // 设置昵称
         usernameTV = (TextView) findViewById(R.id.username);
-        if (UserController.getInstance().getUser() != null) {
-            usernameTV.setText(UserController.getInstance().getUser().getNickname());
-        } else {
+        if (UserController.getInstance().getUser() == null) {
             // 没有user说明没有登录，重新进行登录
             showToast("您还没有进行登录，请进行登录");
             Intent intent = new Intent(this, LoginActivity.class);
@@ -83,21 +84,35 @@ public class MainActivity extends Activity {
         roomList = new ArrayList<>();
         adapter = new MyAdapter(this, R.layout.item_room, roomList);
         roomListView.setAdapter(adapter);
-        // TODO listView item点击事件
+        // listView item点击事件
+        roomListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // TODO 进入房间
+            }
+        });
 
         // 初始化view
         editInfoIV = (ImageView) findViewById(R.id.edit_info);
         editInfoIV.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO 编辑个人信息
+                // 编辑个人信息界面
+                Intent intent = new Intent(MainActivity.this, EditInfoActivity.class);
+                startActivity(intent);
             }
         });
         logoutIV = (ImageView) findViewById(R.id.logout);
         logoutIV.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO 登录注销
+                // 登录注销
+                // 关闭与服务器连接
+                CommunicationController.getInstance(MainActivity.this).clearSocket();
+                // 返回登录界面
+                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                startActivity(intent);
+                finish();
             }
         });
         createRoomBtn = (Button) findViewById(R.id.create_room);
@@ -116,23 +131,17 @@ public class MainActivity extends Activity {
             }
         });
 
+        // 初次更新房间列表
         updateRoomList();
     }
 
-    public MyAdapter getAdapter() {
-        return adapter;
-    }
-
-    public List<Room> getRoomList() {
-        return roomList;
-    }
-
-    public Dialog getDialog() {
-        return dialog;
-    }
-
-    public long getTime() {
-        return time;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        User user = UserController.getInstance().getUser();
+        String username = user.getUsername();
+        String nickname = user.getNickname();
+        usernameTV.setText(nickname + "(" + username + ")");
     }
 
     private void showToast(String msg) {
@@ -168,19 +177,17 @@ public class MainActivity extends Activity {
             // 处理指令
             MainActivity activity = reference.get();
             if (activity != null && msg != null && msg.obj != null && msg.obj instanceof Protocol) {
-                Protocol protocol = (Protocol)msg.obj;
+                Protocol protocol = (Protocol) msg.obj;
                 int order = protocol.getOrder();
                 long time = protocol.getTime();
                 JSONArray content = protocol.getContent();
-                if (time >= activity.getTime()) { // 协议消息没有过期
+                if (time >= activity.time) { // 协议消息没有过期
                     // 关闭进度条
-                    if (activity.getDialog() != null) {
-                        LoadingDialogUtils.closeDialog(activity.getDialog());
-                    }
+                    LoadingDialogUtils.closeDialog(activity.dialog);
                     try {
                         switch (order) {
                             case Protocol.GET_ROOM_LIST: { // 获取房间列表
-                                List<Room> list = activity.getRoomList();
+                                List<Room> list = activity.roomList;
                                 int index = 0;
                                 int roomNumber = content.getInt(index++);
                                 // 刷新房间列表
@@ -194,7 +201,7 @@ public class MainActivity extends Activity {
                                     list.add(room);
                                 }
                                 // 更新listView
-                                activity.getAdapter().notifyDataSetChanged();
+                                activity.adapter.notifyDataSetChanged();
                                 // 更新RoomController
                                 RoomController.getInstance().setList(new ArrayList<Room>(list));
                                 // 显示Toast
@@ -239,13 +246,13 @@ public class MainActivity extends Activity {
             // 初始化view
             if (convertView == null) {
                 view = inflater.inflate(resourceId, parent, false);
-                roomIdTV = (TextView)view.findViewById(R.id.room_id);
-                roomNameTV = (TextView)view.findViewById(R.id.room_name);
-                roomMemberNumberTV = (TextView)view.findViewById(R.id.room_member_number);
+                roomIdTV = (TextView) view.findViewById(R.id.room_id);
+                roomNameTV = (TextView) view.findViewById(R.id.room_name);
+                roomMemberNumberTV = (TextView) view.findViewById(R.id.room_member_number);
                 view.setTag(new ViewHolder(roomIdTV, roomNameTV, roomMemberNumberTV));
             } else {
                 view = convertView;
-                ViewHolder holder = (ViewHolder)view.getTag();
+                ViewHolder holder = (ViewHolder) view.getTag();
                 roomIdTV = holder.roomIdTV;
                 roomNameTV = holder.roomNameTV;
                 roomMemberNumberTV = holder.roomMemberNumberTV;

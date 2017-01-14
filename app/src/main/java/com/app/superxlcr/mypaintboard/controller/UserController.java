@@ -134,6 +134,7 @@ public class UserController {
      */
     public boolean editInfo(final Context context, final Handler handler, long time, String username, String password, String nickname) {
         JSONArray jsonArray = new JSONArray();
+        jsonArray.put(user.getId());
         jsonArray.put(username);
         jsonArray.put(password);
         jsonArray.put(nickname);

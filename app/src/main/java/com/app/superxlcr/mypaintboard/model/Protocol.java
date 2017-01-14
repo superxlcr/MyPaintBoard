@@ -37,7 +37,7 @@ public class Protocol {
 	public static final int REGISTER_UNKNOW_PRO = REGISTER_REPEAT_NICKNAME + 1; // 未知错误
 
 	// 修改资料
-	// c to s: id + username + password + nickname
+	// c to s: id + username + password（为空表示不作修改） + nickname
 	// s to c: stateCode
 	public static final int EDIT_INFO = REGISTER + 1;
 	public static final int EDIT_INFO_SUCCESS = 0; // 成功

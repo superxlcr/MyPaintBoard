@@ -9,10 +9,10 @@
         android:layout_height="wrap_content"
         android:layout_margin="30dp"
         android:gravity="center"
-        android:text="@string/login_text"
+        android:text="@string/edit_info_text"
         android:textSize="24sp" />
 
-    <EditText
+    <TextView
         android:id="@+id/account"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -27,8 +27,17 @@
         android:layout_height="wrap_content"
         android:layout_margin="5dp"
         android:gravity="center"
-        android:hint="@string/password"
+        android:hint="@string/edit_info_password"
         android:inputType="textPassword"
+        android:textSize="16sp" />
+
+    <EditText
+        android:id="@+id/nickname"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:gravity="center"
+        android:hint="@string/nickname"
         android:textSize="16sp" />
 
     <LinearLayout
@@ -37,19 +46,19 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/login"
+            android:id="@+id/confirm"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
             android:layout_weight="1"
-            android:text="@string/login" />
+            android:text="@string/confirm" />
 
         <Button
-            android:id="@+id/register"
+            android:id="@+id/cancel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
             android:layout_weight="1"
-            android:text="@string/register" />
+            android:text="@string/cancel" />
     </LinearLayout>
 </LinearLayout>

@@ -5,34 +5,40 @@
     android:orientation="vertical">
 
     <TextView
-        android:layout_margin="30dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="30dp"
+        android:gravity="center"
         android:text="@string/register_text"
-        android:textSize="24sp"
-        android:gravity="center"/>
+        android:textSize="24sp" />
 
     <EditText
         android:id="@+id/account"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="5dp"
         android:gravity="center"
-        android:hint="@string/account" />
+        android:hint="@string/account"
+        android:textSize="16sp" />
 
     <EditText
         android:id="@+id/password"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="5dp"
         android:gravity="center"
+        android:hint="@string/password"
         android:inputType="textPassword"
-        android:hint="@string/password" />
+        android:textSize="16sp" />
 
     <EditText
         android:id="@+id/nickname"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="5dp"
         android:gravity="center"
-        android:hint="@string/nickname" />
+        android:hint="@string/nickname"
+        android:textSize="16sp" />
 
     <LinearLayout
         android:layout_width="match_parent"

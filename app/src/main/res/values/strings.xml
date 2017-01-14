@@ -14,6 +14,8 @@
     <string name="room_id">id：</string>
     <string name="room_name">名称：</string>
     <string name="room_member_number">人数：</string>
+    <string name="edit_info_text">请填入新的用户信息</string>
+    <string name="edit_info_password">密码不填则表示不作更改</string>
 
     <string name="dummy">-1</string>
 </resources>
