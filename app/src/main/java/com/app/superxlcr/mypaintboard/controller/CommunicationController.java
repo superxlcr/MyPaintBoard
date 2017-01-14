@@ -33,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class CommunicationController {
 
     // 服务器IP
-    public static String SERVER_IP = "192.168.1.116";
+    public static String SERVER_IP = "192.168.1.108";
 
     private static String TAG = CommunicationController.class.getSimpleName();
 

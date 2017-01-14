@@ -66,11 +66,15 @@ public class LoadingDialogUtils {
      * 关闭进度条
      *
      * @param mDialog
+     *
+     * @return 是否关闭成功
      */
-    public static void closeDialog(Dialog mDialog) {
+    public static boolean closeDialog(Dialog mDialog) {
         if (mDialog != null && mDialog.isShowing()) {
             mDialog.dismiss();
+            return true;
         }
+        return false;
     }
 
     private LoadingDialogUtils() {

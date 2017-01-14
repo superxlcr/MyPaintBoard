@@ -1,13 +1,12 @@
 package com.app.superxlcr.mypaintboard.view;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
@@ -31,7 +30,7 @@ import java.lang.ref.SoftReference;
  * 登录界面
  */
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends Activity {
 
     private static MyHandler handler;
 
@@ -158,8 +157,10 @@ public class LoginActivity extends AppCompatActivity {
                                 UserController.getInstance().setUser(new User(id, username, "*", nickname));
                                 // 显示信息
                                 showToast("登录成功");
-                                // TODO 界面跳转
-//                                activity.finish();
+                                // 界面跳转
+                                Intent intent = new Intent(activity, MainActivity.class);
+                                activity.startActivity(intent);
+                                activity.finish();
                                 break;
                             }
                             case Protocol.LOGIN_UNKNOW_PRO: { // 未知错误

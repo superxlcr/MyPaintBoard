@@ -125,6 +125,8 @@ public class Protocol {
 	// 指令
 	private int order;
 	// 时间戳
+	// 客户端查询：客户端时间为准
+	// 服务器推送：服务器时间为准
 	private long time;
 	// 内容
 	private JSONArray content;

@@ -1,5 +1,6 @@
 package com.app.superxlcr.mypaintboard.view;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -8,6 +9,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -28,7 +30,7 @@ import java.lang.ref.SoftReference;
  * 注册界面
  */
 
-public class RegisterActivity extends AppCompatActivity {
+public class RegisterActivity extends Activity {
 
     private MyHandler handler;
 
@@ -159,8 +161,10 @@ public class RegisterActivity extends AppCompatActivity {
                                 UserController.getInstance().setUser(new User(id, username, "*", nickname));
                                 // 显示信息
                                 showToast("注册成功");
-                                // TODO 界面跳转
-//                                activity.finish();
+                                // 界面跳转
+                                Intent intent = new Intent(activity, MainActivity.class);
+                                activity.startActivity(intent);
+                                activity.finish();
                             }
                             case Protocol.REGISTER_UNKNOW_PRO: { // 未知错误
                                 showToast("遇到未知错误");
