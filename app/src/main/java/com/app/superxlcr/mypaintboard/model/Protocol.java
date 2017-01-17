@@ -51,7 +51,7 @@ public class Protocol {
 
 	// 创建房间
 	// c to s: roomName
-	// s to c: roomId
+	// s to c: roomId + roomName
 	public static final int CREATE_ROOM = GET_ROOM_LIST + 1;
 
 	// 加入房间
@@ -81,32 +81,38 @@ public class Protocol {
 	public static final int GET_ROOM_MEMBER_SUCCESS = 0; // 成功才有后续内容
 	public static final int GET_ROOM_MEMBER_WRONG_ROOM_ID = GET_ROOM_MEMBER_SUCCESS + 1; // 房间id错误
 	public static final int GET_ROOM_MEMBER_UNKNOW_PRO = GET_ROOM_MEMBER_WRONG_ROOM_ID + 1; // 未知错误
-
+	
 	// 聊天消息
 	// c to s: roomId + message
 	// s to c: stateCode
-	// push: roomId + username + message
 	public static final int MESSAGE = GET_ROOM_MEMBER + 1;
 	public static final int MESSAGE_SUCCESS = 0;
 	public static final int MESSAGE_WRONG_ROOM_ID = MESSAGE_SUCCESS + 1; // 错误的房间id
 	public static final int MESSAGE_UNKNOW_PRO = MESSAGE_WRONG_ROOM_ID + 1; // 未知错误
 
+	// 聊天消息推送
+	// push: roomId + nickname + message
+	public static final int MESSAGE_PUSH = MESSAGE + 1;
+	
 	// 绘制消息
 	// c to s: roomId + line (pointNumber + point (x , y) + color + width +
 	// isEraser)
 	// s to c: stateCode
-	// push: roomId + username + line (pointNumber + point (x , y) +
-	// color + width + isEraser)
-	public static final int DRAW = MESSAGE + 1;
+	public static final int DRAW = MESSAGE_PUSH + 1;
 	public static final int DRAW_SUCCESS = 0;
 	public static final int DRAW_WRONG_ROOM_ID = DRAW_SUCCESS + 1; // 错误的房间id
 	public static final int DRAW_UNKNOW_PRO = DRAW_WRONG_ROOM_ID + 1; // 未知错误
 
+	// 绘制消息推送
+	// push: roomId + username + line (pointNumber + point (x , y) +
+	// color + width + isEraser)
+	public static final int DRAW_PUSH = DRAW + 1;
+	
 	// 同步绘制消息
 	// c to s: roomId
 	// s to c: stateCode + lineNumber + line (pointNumber + point (x , y) +
 	// color + width + isEraser)
-	public static final int GET_DRAW_LIST = DRAW + 1;
+	public static final int GET_DRAW_LIST = DRAW_PUSH + 1;
 	public static final int GET_DRAW_LIST_SUCCESS = 0;
 	public static final int GET_DRAW_LIST_WRONG_ROOM_ID = GET_DRAW_LIST_SUCCESS + 1; // 错误的房间id
 	public static final int GET_DRAW_LIST_UNKONW_PRO = GET_DRAW_LIST_WRONG_ROOM_ID + 1; // 未知错误

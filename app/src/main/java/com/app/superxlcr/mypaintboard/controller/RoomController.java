@@ -70,7 +70,6 @@ public class RoomController {
      * @return 是否成功发送信息
      */
     public boolean getRoomList(final Context context, final Handler handler, long time) {
-        list = new ArrayList<>();
         JSONArray jsonArray = new JSONArray();
         Protocol sendProtocol = new Protocol(Protocol.GET_ROOM_LIST, time, jsonArray);
         // 注册监听器，监听结果

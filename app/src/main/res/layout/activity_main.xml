@@ -6,7 +6,7 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="24dp"
         android:background="@color/colorPrimary">
 
         <TextView
@@ -17,7 +17,7 @@
             android:layout_marginLeft="24dp"
             android:text="@string/account"
             android:textColor="@android:color/white"
-            android:textSize="24sp" />
+            android:textSize="16sp" />
 
         <ImageView
             android:id="@+id/logout"
@@ -26,7 +26,7 @@
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:layout_marginRight="24dp"
-            android:src="@mipmap/logout" />
+            android:src="@mipmap/logout_white" />
 
         <ImageView
             android:id="@+id/edit_info"
@@ -35,7 +35,7 @@
             android:layout_centerVertical="true"
             android:layout_marginRight="12dp"
             android:layout_toLeftOf="@+id/logout"
-            android:src="@mipmap/edit_info" />
+            android:src="@mipmap/edit_info_white" />
     </RelativeLayout>
 
     <ListView

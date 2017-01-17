@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +19,7 @@ import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -119,7 +121,34 @@ public class MainActivity extends Activity {
         createRoomBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO 创建房间
+                // 创建房间
+                final EditText et = new EditText(MainActivity.this);
+                new AlertDialog.Builder(MainActivity.this).setTitle("请输入房间名称").setView(et).setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int which) {
+                        if (et.getText().toString().isEmpty()) {
+                            showToast("请输入房间名称");
+                        } else {
+                            // 创建房间
+                            String roomName = et.getText().toString();
+                            time = System.currentTimeMillis();
+                            dialog = LoadingDialogUtils.showDialog(MainActivity.this, "正在创建房间...", true);
+                            dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                                @Override
+                                public void onCancel(DialogInterface dialogInterface) {
+                                    // 关闭进度条
+                                    LoadingDialogUtils.closeDialog(dialog);
+                                    // 更新时间，使过去协议失效
+                                    time += 1;
+                                }
+                            });
+                            if (!RoomController.getInstance().createRoom(MainActivity.this, handler, time, roomName)) {
+                                // 没发送成功，关闭进度条
+                                LoadingDialogUtils.closeDialog(dialog);
+                            }
+                        }
+                    }
+                }).setNegativeButton("取消", null).show();
             }
         });
         updateRoomListBtn = (Button) findViewById(R.id.update_room_list);
@@ -174,7 +203,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void handleMessage(Message msg) {
-            // 处理指令
+            // TODO 处理指令
             MainActivity activity = reference.get();
             if (activity != null && msg != null && msg.obj != null && msg.obj instanceof Protocol) {
                 Protocol protocol = (Protocol) msg.obj;
@@ -206,6 +235,18 @@ public class MainActivity extends Activity {
                                 RoomController.getInstance().setList(new ArrayList<Room>(list));
                                 // 显示Toast
                                 showToast("房间列表更新成功");
+                                break;
+                            }
+                            case Protocol.CREATE_ROOM: { // 创建房间
+                                int roomId = content.getInt(0);
+                                String roomName = content.getString(1);
+                                // 保存房间
+                                Room room = new Room(UserController.getInstance().getUser(), roomId, roomName);
+                                RoomController.getInstance().setRoom(room);
+                                showToast("房间创建成功");
+                                // 跳转至房间界面
+                                Intent intent = new Intent(activity, RoomActivity.class);
+                                activity.startActivity(intent);
                                 break;
                             }
                         }

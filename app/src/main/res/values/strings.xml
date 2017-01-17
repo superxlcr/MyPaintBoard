@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">MyPaintBoard</string>
-    <string name="login_text">请填入登录信息</string>
+    <string name="login_text">多人实时画板</string>
     <string name="account">账号</string>
     <string name="password">密码</string>
     <string name="login">登录</string>
@@ -16,6 +16,7 @@
     <string name="room_member_number">人数：</string>
     <string name="edit_info_text">请填入新的用户信息</string>
     <string name="edit_info_password">密码不填则表示不作更改</string>
+    <string name="send">发送</string>
 
     <string name="dummy">-1</string>
 </resources>

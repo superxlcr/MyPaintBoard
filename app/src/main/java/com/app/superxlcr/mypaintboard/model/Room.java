@@ -35,6 +35,11 @@ public class Room {
 	}
 
 	@Override
+	public int hashCode() {
+		return id;
+	}
+
+	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof Room) {
 			return id == ((Room)obj).getId();
