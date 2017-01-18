@@ -1,4 +1,4 @@
-package com.app.superxlcr.mypaintboard.tools;
+package com.app.superxlcr.mypaintboard.utils;
 
 import com.app.superxlcr.mypaintboard.model.Protocol;
 

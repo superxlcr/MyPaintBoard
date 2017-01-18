@@ -8,14 +8,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.widget.Adapter;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -32,7 +29,7 @@ import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.Room;
 import com.app.superxlcr.mypaintboard.model.User;
-import com.app.superxlcr.mypaintboard.tools.LoadingDialogUtils;
+import com.app.superxlcr.mypaintboard.utils.LoadingDialogUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -90,7 +87,22 @@ public class MainActivity extends Activity {
         roomListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // TODO 进入房间
+                // 进入房间
+                Room room = roomList.get(position);
+                time = System.currentTimeMillis();
+                dialog = LoadingDialogUtils.showDialog(MainActivity.this, "正在加入房间...", true);
+                dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialogInterface) {
+                        // 关闭进度条
+                        LoadingDialogUtils.closeDialog(dialog);
+                        // 更新时间，使过去协议失效
+                        time += 1;
+                        // 退出房间
+                        RoomController.getInstance().exitRoom(MainActivity.this, handler, System.currentTimeMillis());
+                    }
+                });
+                RoomController.getInstance().joinRoom(MainActivity.this, handler, time, room.getId());
             }
         });
 
@@ -140,6 +152,8 @@ public class MainActivity extends Activity {
                                     LoadingDialogUtils.closeDialog(dialog);
                                     // 更新时间，使过去协议失效
                                     time += 1;
+                                    // 退出房间
+                                    RoomController.getInstance().exitRoom(MainActivity.this, handler, System.currentTimeMillis());
                                 }
                             });
                             if (!RoomController.getInstance().createRoom(MainActivity.this, handler, time, roomName)) {
@@ -203,7 +217,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void handleMessage(Message msg) {
-            // TODO 处理指令
+            // 处理指令
             MainActivity activity = reference.get();
             if (activity != null && msg != null && msg.obj != null && msg.obj instanceof Protocol) {
                 Protocol protocol = (Protocol) msg.obj;
@@ -247,6 +261,38 @@ public class MainActivity extends Activity {
                                 // 跳转至房间界面
                                 Intent intent = new Intent(activity, RoomActivity.class);
                                 activity.startActivity(intent);
+                                break;
+                            }
+                            case Protocol.JOIN_ROOM: { // 加入房间
+                                int stateCode = content.getInt(0);
+                                switch (stateCode) {
+                                    case Protocol.JOIN_ROOM_ALREADY_IN: { // 用户已在该房间
+                                        showToast("您已在该房间中");
+                                        break;
+                                    }
+                                    case Protocol.JOIN_ROOM_INVALID_ROOMID: { // 房间id错误
+                                        showToast("该房间已失效，请更新房间列表");
+                                        // 更新房间列表
+                                        activity.updateRoomList();
+                                        break;
+                                    }
+                                    case Protocol.JOIN_ROOM_SUCCESS: { // 加入房间成功
+                                        int roomId = content.getInt(1);
+                                        String roomName = content.getString(2);
+                                        // 保存房间
+                                        Room room = new Room(UserController.getInstance().getUser(), roomId, roomName);
+                                        RoomController.getInstance().setRoom(room);
+                                        showToast("加入房间成功");
+                                        // 跳转至房间界面
+                                        Intent intent = new Intent(activity, RoomActivity.class);
+                                        activity.startActivity(intent);
+                                        break;
+                                    }
+                                    case Protocol.JOIN_ROOM_UNKNOW_PRO: { // 未知错误
+                                        showToast("出现未知错误");
+                                        break;
+                                    }
+                                }
                                 break;
                             }
                         }

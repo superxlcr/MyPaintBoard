@@ -123,14 +123,20 @@ public class MyChatView extends LinearLayout {
             holder.nicknameTV.setText(item.getNickname());
             holder.messageTV.setText(item.getMessage());
             holder.timeTV.setText(item.getSimpleFormatTime());
-            // TODO 发送失败打个叉
+
             // 是否显示正在发送动画
             if (item.isWaiting()) {
                 holder.imageView.setVisibility(View.VISIBLE);
                 holder.imageView.startAnimation(hyperspaceJumpAnimation);
             } else {
-                holder.imageView.setVisibility(View.GONE);
+                // 关闭动画
                 holder.imageView.clearAnimation();
+                // 发送失败打个叉
+                if (item.isSendFail()) {
+                    holder.imageView.setImageResource(R.mipmap.send_fail);
+                } else {
+                    holder.imageView.setVisibility(View.GONE);
+                }
             }
             return view;
         }

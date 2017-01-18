@@ -6,7 +6,7 @@ import android.os.Message;
 
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.User;
-import com.app.superxlcr.mypaintboard.tools.ProtocolListener;
+import com.app.superxlcr.mypaintboard.utils.ProtocolListener;
 
 import org.json.JSONArray;
 

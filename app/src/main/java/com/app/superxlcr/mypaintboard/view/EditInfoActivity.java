@@ -16,7 +16,7 @@ import com.app.superxlcr.mypaintboard.R;
 import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.User;
-import com.app.superxlcr.mypaintboard.tools.LoadingDialogUtils;
+import com.app.superxlcr.mypaintboard.utils.LoadingDialogUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;

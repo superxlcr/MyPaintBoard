@@ -6,11 +6,10 @@ import android.os.Message;
 
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.Room;
-import com.app.superxlcr.mypaintboard.tools.ProtocolListener;
+import com.app.superxlcr.mypaintboard.utils.ProtocolListener;
 
 import org.json.JSONArray;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -171,7 +170,6 @@ public class RoomController {
      */
     public boolean exitRoom(final Context context, final Handler handler, long time) {
         JSONArray jsonArray = new JSONArray();
-        jsonArray.put(room.getId());
         Protocol sendProtocol = new Protocol(Protocol.EXIT_ROOM, time, jsonArray);
         // 注册监听器，监听结果
         exitRoomListener = new ProtocolListener() {

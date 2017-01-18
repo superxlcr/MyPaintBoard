@@ -1,4 +1,4 @@
-package com.app.superxlcr.mypaintboard.tools;
+package com.app.superxlcr.mypaintboard.utils;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -53,8 +53,7 @@ public class LoadingDialogUtils {
         Window window = loadingDialog.getWindow();
         WindowManager.LayoutParams lp = window.getAttributes();
         lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-        Display d = window.getWindowManager().getDefaultDisplay(); // 获取屏幕宽、高度
-        lp.height = (int)(d.getHeight() * 0.25);
+        lp.height = DensityUtil.dip2px(context, 165); // 165dp
         window.setGravity(Gravity.CENTER);
         window.setAttributes(lp);
         window.setWindowAnimations(R.style.PopWindowAnimStyle);

@@ -7,7 +7,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.app.superxlcr.mypaintboard.model.Protocol;
-import com.app.superxlcr.mypaintboard.tools.ProtocolListener;
+import com.app.superxlcr.mypaintboard.utils.ProtocolListener;
 
 import org.json.JSONArray;
 

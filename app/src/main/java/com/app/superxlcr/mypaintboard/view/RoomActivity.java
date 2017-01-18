@@ -46,6 +46,7 @@ public class RoomActivity extends Activity {
             finish();
         }
         roomId = RoomController.getInstance().getRoom().getId();
+
         // 初始化用户名
         if (UserController.getInstance().getUser() == null) {
             Toast.makeText(this, "您还未进行登录", Toast.LENGTH_SHORT).show();
@@ -80,8 +81,9 @@ public class RoomActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        // 退出房间
+        RoomController.getInstance().exitRoom(this, handler, System.currentTimeMillis());
         super.onDestroy();
-        // TODO 退出房间
     }
 
     static class MyHandler extends Handler {
@@ -119,12 +121,36 @@ public class RoomActivity extends Activity {
                                     break;
                                 }
                                 case Protocol.MESSAGE_WRONG_ROOM_ID: { // 错误的房间id
-                                    // TODO
+                                    // 发送失败状态更改
+                                    long time = protocol.getTime();
+                                    // 根据时间寻找聊天记录
+                                    for (ChatMessage chatMessage : activity.myChatView.getMyChatMessageList()) {
+                                        if (time == chatMessage.getTime()) {
+                                            // 已发送失败
+                                            chatMessage.setWaiting(false);
+                                            chatMessage.setSendFail(true);
+                                            break;
+                                        }
+                                    }
+                                    // 更改动画
+                                    activity.myChatView.getAdapter().notifyDataSetChanged();
                                     showToast("当前房间id发生错误，消息发送失败，请退出重试");
                                     break;
                                 }
                                 case Protocol.MESSAGE_UNKNOW_PRO: { // 未知错误
-                                    // TODO
+                                    // 发送失败状态更改
+                                    long time = protocol.getTime();
+                                    // 根据时间寻找聊天记录
+                                    for (ChatMessage chatMessage : activity.myChatView.getMyChatMessageList()) {
+                                        if (time == chatMessage.getTime()) {
+                                            // 已发送失败
+                                            chatMessage.setWaiting(false);
+                                            chatMessage.setSendFail(true);
+                                            break;
+                                        }
+                                    }
+                                    // 更改动画
+                                    activity.myChatView.getAdapter().notifyDataSetChanged();
                                     showToast("发生未知错误，消息发送失败");
                                     break;
                                 }
@@ -137,13 +163,35 @@ public class RoomActivity extends Activity {
                             String message = content.getString(2);
 
                             // 判断消息是否有效
-                            if (roomId != activity.roomId || nickname == activity.nickname) {
-                                showToast("接收到无效的消息");
+                            if (roomId != activity.roomId) {
+                                showToast("接收到无效的消息，房间id错误");
+                            } else if (nickname == activity.nickname) {
+                                showToast("接收到无效的消息，昵称重复");
                             } else {
-                                // 更新消息列表
-                                ChatMessage chatMessage = new ChatMessage(nickname, message, ChatMessage.RECEIVE, System.currentTimeMillis(), false);
-                                activity.myChatView.getMyChatMessageList().add(chatMessage);
-                                activity.myChatView.getAdapter().notifyDataSetChanged();
+                                    // 更新消息列表
+                                    ChatMessage chatMessage = new ChatMessage(nickname, message, ChatMessage.RECEIVE, System.currentTimeMillis(), false);
+                                    activity.myChatView.getMyChatMessageList().add(chatMessage);
+                                    activity.myChatView.getAdapter().notifyDataSetChanged();
+                            }
+                            break;
+                        }
+                        case Protocol.EXIT_ROOM: { // 退出房间
+                            int stateCode = content.getInt(0);
+                            switch (stateCode) {
+                                case Protocol.EXIT_ROOM_NOT_IN: { // 用户不在任何房间
+                                    showToast("用户不在该房间，退出错误");
+                                    break;
+                                }
+                                case Protocol.EXIT_ROOM_SUCCESS: { // 退出成功
+                                    showToast("退出房间成功");
+                                    // 清空保存的房间
+                                    RoomController.getInstance().setRoom(null);
+                                    break;
+                                }
+                                case Protocol.EXIT_ROOM_UNKNOW_PRO: { // 未知错误
+                                    showToast("退出房间出现未知错误");
+                                    break;
+                                }
                             }
                             break;
                         }

@@ -18,6 +18,7 @@ public class ChatMessage {
     private int state; // 状态（发送还是接收）
     private long time; // 发送时间
     private boolean waiting; // 是否正在发送
+    private boolean sendFail; // 是否发送失败
 
     public ChatMessage(String nickname, String message, int state, long time, boolean waiting) {
         this.nickname = nickname;
@@ -25,6 +26,15 @@ public class ChatMessage {
         this.state = state;
         this.time = time;
         this.waiting = waiting;
+        this.sendFail = false;
+    }
+
+    public boolean isSendFail() {
+        return sendFail;
+    }
+
+    public void setSendFail(boolean sendFail) {
+        this.sendFail = sendFail;
     }
 
     public void setWaiting(boolean waiting) {

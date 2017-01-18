@@ -56,7 +56,7 @@ public class Protocol {
 
 	// 加入房间
 	// c to s: roomId
-	// s to c: stateCode
+	// s to c: stateCode + (roomId + roomName) (if success)
 	public static final int JOIN_ROOM = CREATE_ROOM + 1;
 	public static final int JOIN_ROOM_SUCCESS = 0; // 成功
 	public static final int JOIN_ROOM_INVALID_ROOMID = JOIN_ROOM_SUCCESS + 1; // 非法房间id
@@ -64,11 +64,11 @@ public class Protocol {
 	public static final int JOIN_ROOM_ALREADY_IN = JOIN_ROOM_UNKNOW_PRO + 1; // 用户已在该房间
 
 	// 退出房间
-	// c to s: roomId
+	// c to s:
 	// s to c: stateCode
 	public static final int EXIT_ROOM = JOIN_ROOM + 1;
 	public static final int EXIT_ROOM_SUCCESS = 0; // 成功
-	public static final int EXIT_ROOM_NOT_IN = EXIT_ROOM_SUCCESS + 1; // 用户不在该房间
+	public static final int EXIT_ROOM_NOT_IN = EXIT_ROOM_SUCCESS + 1; // 用户不在任何房间
 	public static final int EXIT_ROOM_UNKNOW_PRO = EXIT_ROOM_NOT_IN + 1; // 未知错误
 
 	// 获取房间成员

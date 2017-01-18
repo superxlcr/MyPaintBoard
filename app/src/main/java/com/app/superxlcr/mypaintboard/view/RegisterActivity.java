@@ -7,9 +7,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -18,7 +16,7 @@ import com.app.superxlcr.mypaintboard.R;
 import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.User;
-import com.app.superxlcr.mypaintboard.tools.LoadingDialogUtils;
+import com.app.superxlcr.mypaintboard.utils.LoadingDialogUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
