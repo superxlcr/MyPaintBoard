@@ -45,7 +45,7 @@ import java.util.List;
 
 public class MainActivity extends Activity {
 
-    private static MyHandler handler;
+    private static MyHandler handler = new MyHandler();
 
     private TextView usernameTV;
     private ImageView editInfoIV;
@@ -76,7 +76,7 @@ public class MainActivity extends Activity {
         }
 
         // 初始化Handler
-        handler = new MyHandler(this);
+        handler.setReference(new SoftReference<MainActivity>(this));
 
         // 初始化列表
         roomListView = (ListView) findViewById(R.id.room_list);
@@ -211,8 +211,11 @@ public class MainActivity extends Activity {
 
         private SoftReference<MainActivity> reference;
 
-        public MyHandler(MainActivity activity) {
-            reference = new SoftReference<MainActivity>(activity);
+        public MyHandler() {
+        }
+
+        public void setReference(SoftReference<MainActivity> reference) {
+            this.reference = reference;
         }
 
         @Override

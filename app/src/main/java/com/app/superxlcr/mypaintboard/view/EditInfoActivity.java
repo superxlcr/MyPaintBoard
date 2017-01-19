@@ -30,7 +30,7 @@ import java.lang.ref.SoftReference;
 
 public class EditInfoActivity extends Activity {
 
-    private static Handler handler;
+    private static MyHandler handler = new MyHandler();
 
     private TextView accountTV;
     private EditText passwordET;
@@ -46,7 +46,7 @@ public class EditInfoActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_info);
 
-        handler = new MyHandler(this);
+        handler.setReference(new SoftReference<EditInfoActivity>(this));
 
         accountTV = (TextView) findViewById(R.id.account);
         accountTV.setText(UserController.getInstance().getUser().getUsername());
@@ -90,8 +90,11 @@ public class EditInfoActivity extends Activity {
 
         private SoftReference<EditInfoActivity> reference;
 
-        public MyHandler(EditInfoActivity activity) {
-            reference = new SoftReference<EditInfoActivity>(activity);
+        public MyHandler() {
+        }
+
+        public void setReference(SoftReference<EditInfoActivity> reference) {
+            this.reference = reference;
         }
 
         @Override

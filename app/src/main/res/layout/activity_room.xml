@@ -1,28 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--TODO 搞个层叠Layout-->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.app.superxlcr.mypaintboard.view.CascadeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cascade_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="horizontal">
-
-    <ImageView
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:src="@android:color/black" />
+    android:layout_height="match_parent">
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingLeft="@dimen/trigger_button_width">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:text="member"
-            android:background="@android:color/holo_blue_dark"/>
+            android:background="@android:color/holo_blue_dark"
+            android:text="member" />
 
         <com.app.superxlcr.mypaintboard.view.MyChatView
             android:id="@+id/my_chat_view"
@@ -32,4 +25,27 @@
 
     </LinearLayout>
 
-</LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@android:color/black" />
+
+        <TextView
+            android:id="@+id/trigger_view"
+            android:layout_width="@dimen/trigger_button_width"
+            android:layout_height="match_parent"
+            android:background="@android:color/darker_gray"
+            android:gravity="center"
+            android:text="@string/trigger_button"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+</com.app.superxlcr.mypaintboard.view.CascadeLayout>

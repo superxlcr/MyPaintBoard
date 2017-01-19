@@ -30,7 +30,7 @@ import java.lang.ref.SoftReference;
 
 public class RegisterActivity extends Activity {
 
-    private MyHandler handler;
+    private MyHandler handler = new MyHandler();
 
     private EditText accountEt;
     private EditText passwordEt;
@@ -45,7 +45,7 @@ public class RegisterActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
-        handler = new MyHandler(this);
+        handler.setReference(new SoftReference<RegisterActivity>(this));
         accountEt = (EditText) findViewById(R.id.account);
         passwordEt = (EditText) findViewById(R.id.password);
         nicknameEt = (EditText) findViewById(R.id.nickname);
@@ -123,8 +123,11 @@ public class RegisterActivity extends Activity {
 
         private SoftReference<RegisterActivity> reference;
 
-        public MyHandler(RegisterActivity activity) {
-            reference = new SoftReference<RegisterActivity>(activity);
+        public MyHandler() {
+        }
+
+        public void setReference(SoftReference<RegisterActivity> reference) {
+            this.reference = reference;
         }
 
         @Override

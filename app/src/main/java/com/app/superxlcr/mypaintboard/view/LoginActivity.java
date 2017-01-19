@@ -31,7 +31,7 @@ import java.lang.ref.SoftReference;
 
 public class LoginActivity extends Activity {
 
-    private static MyHandler handler;
+    private static MyHandler handler = new MyHandler();
 
     private EditText accountEt;
     private EditText passwordEt;
@@ -49,7 +49,7 @@ public class LoginActivity extends Activity {
         // 初始化服务器连接
         CommunicationController.getInstance(this).connectServer();
 
-        handler = new MyHandler(this);
+        handler.setReference(new SoftReference<LoginActivity>(this));
         accountEt = (EditText) findViewById(R.id.account);
         passwordEt = (EditText) findViewById(R.id.password);
         loginBtn = (Button) findViewById(R.id.login);
@@ -112,8 +112,11 @@ public class LoginActivity extends Activity {
 
         private SoftReference<LoginActivity> reference;
 
-        public MyHandler(LoginActivity activity) {
-            reference = new SoftReference<LoginActivity>(activity);
+        public MyHandler() {
+        }
+
+        public void setReference(SoftReference<LoginActivity> reference) {
+            this.reference = reference;
         }
 
         @Override

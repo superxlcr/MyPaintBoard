@@ -20,7 +20,7 @@ import java.util.List;
 
 public class RoomController {
 
-    public static RoomController instance;
+    private static RoomController instance;
 
     public static RoomController getInstance() {
         if (instance == null) {

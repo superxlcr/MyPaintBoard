@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.app.superxlcr.mypaintboard.R;
@@ -13,6 +14,7 @@ import com.app.superxlcr.mypaintboard.controller.RoomController;
 import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.ChatMessage;
 import com.app.superxlcr.mypaintboard.model.Protocol;
+import com.readystatesoftware.viewbadger.BadgeView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,19 +28,25 @@ import java.lang.ref.SoftReference;
 
 public class RoomActivity extends Activity {
 
-    private static Handler handler;
+    private static MyHandler handler = new MyHandler();
 
     private int roomId;
     private String nickname;
 
+    private CascadeLayout cascadeLayout;
+    private TextView triggerView;
+
+    private BadgeView badgeView;
     private MyChatView myChatView;
+
+    private int newMessageNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
 
-        handler = new MyHandler(this);
+        handler.setReference(new SoftReference<RoomActivity>(this));
 
         // 初始化房间id
         if (RoomController.getInstance().getRoom() == null) {
@@ -55,6 +63,26 @@ public class RoomActivity extends Activity {
         nickname = UserController.getInstance().getUser().getNickname();
 
         // TODO 初始化view
+        // 层叠view
+        cascadeLayout = (CascadeLayout) findViewById(R.id.cascade_layout);
+        triggerView = (TextView) findViewById(R.id.trigger_view);
+        cascadeLayout.setTriggerView(triggerView);
+        cascadeLayout.setAnimatorTime(500);
+
+        // 显示聊天数字view
+        newMessageNumber = 0;
+        badgeView = new BadgeView(this, triggerView);
+        badgeView.setText(newMessageNumber + "");
+        badgeView.hide();
+        cascadeLayout.setListener(new CascadeLayout.CascadeLayoutListener() {
+            @Override
+            public void onOpenLayout() {
+                // 展开聊天界面时关闭数字显示
+                badgeView.hide();
+            }
+        });
+
+        // 聊天view
         myChatView = (MyChatView) findViewById(R.id.my_chat_view);
         myChatView.getSendBtn().setOnClickListener(new View.OnClickListener() {
             @Override
@@ -90,8 +118,11 @@ public class RoomActivity extends Activity {
 
         private SoftReference<RoomActivity> reference;
 
-        public MyHandler(RoomActivity activity) {
-            reference = new SoftReference<RoomActivity>(activity);
+        public MyHandler() {
+        }
+
+        public void setReference(SoftReference<RoomActivity> reference) {
+            this.reference = reference;
         }
 
         @Override
@@ -167,11 +198,21 @@ public class RoomActivity extends Activity {
                                 showToast("接收到无效的消息，房间id错误");
                             } else if (nickname == activity.nickname) {
                                 showToast("接收到无效的消息，昵称重复");
-                            } else {
-                                    // 更新消息列表
-                                    ChatMessage chatMessage = new ChatMessage(nickname, message, ChatMessage.RECEIVE, System.currentTimeMillis(), false);
-                                    activity.myChatView.getMyChatMessageList().add(chatMessage);
-                                    activity.myChatView.getAdapter().notifyDataSetChanged();
+                            } else { // 收到成功的消息
+                                if (activity.cascadeLayout.getState() == CascadeLayout.OPEN) {
+                                    // 显示聊天界面时，不记录未读消息数
+                                    activity.newMessageNumber = 0;
+                                } else if (activity.cascadeLayout.getState() == CascadeLayout.CLOSE) {
+                                    // 增加新的未读消息数
+                                    activity.newMessageNumber++;
+                                    // 显示未读消息数
+                                    activity.badgeView.setText(activity.newMessageNumber + "");
+                                    activity.badgeView.show();
+                                }
+                                // 更新消息列表
+                                ChatMessage chatMessage = new ChatMessage(nickname, message, ChatMessage.RECEIVE, System.currentTimeMillis(), false);
+                                activity.myChatView.getMyChatMessageList().add(chatMessage);
+                                activity.myChatView.getAdapter().notifyDataSetChanged();
                             }
                             break;
                         }
