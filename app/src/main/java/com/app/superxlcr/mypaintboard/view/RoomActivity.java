@@ -1,25 +1,36 @@
 package com.app.superxlcr.mypaintboard.view;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.app.superxlcr.mypaintboard.R;
 import com.app.superxlcr.mypaintboard.controller.ChatController;
+import com.app.superxlcr.mypaintboard.controller.MemberController;
 import com.app.superxlcr.mypaintboard.controller.RoomController;
 import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.ChatMessage;
 import com.app.superxlcr.mypaintboard.model.Protocol;
+import com.app.superxlcr.mypaintboard.model.User;
 import com.readystatesoftware.viewbadger.BadgeView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by superxlcr on 2017/1/15.
@@ -33,12 +44,18 @@ public class RoomActivity extends Activity {
     private int roomId;
     private String nickname;
 
+    // 层叠view
     private CascadeLayout cascadeLayout;
     private TextView triggerView;
 
+    // 成员相关
+    private ListView memberListView;
+    private List<Member> memberList;
+    private MemberAdapter memberAdapter;
+
+    // 聊天相关
     private BadgeView badgeView;
     private MyChatView myChatView;
-
     private int newMessageNumber;
 
     @Override
@@ -82,6 +99,16 @@ public class RoomActivity extends Activity {
             }
         });
 
+        // 成员列表view
+        memberListView = (ListView) findViewById(R.id.member_list);
+        memberList = new ArrayList<>();
+        memberAdapter = new MemberAdapter(this, R.layout.item_member, memberList);
+        memberListView.setAdapter(memberAdapter);
+
+        // 初始化成员模块，获取房间成员信息
+        MemberController.getInstance().setReceiveHandler(this, handler);
+        MemberController.getInstance().getRoomMember(this, roomId, System.currentTimeMillis());
+
         // 聊天view
         myChatView = (MyChatView) findViewById(R.id.my_chat_view);
         myChatView.getSendBtn().setOnClickListener(new View.OnClickListener() {
@@ -112,6 +139,66 @@ public class RoomActivity extends Activity {
         // 退出房间
         RoomController.getInstance().exitRoom(this, handler, System.currentTimeMillis());
         super.onDestroy();
+    }
+
+    static class Member {
+        String nickname;
+        boolean admin;
+
+        public Member(String nickname, boolean admin) {
+            this.nickname = nickname;
+            this.admin = admin;
+        }
+    }
+
+    static class MemberAdapter extends ArrayAdapter<Member> {
+
+        private LayoutInflater inflater;
+        private int resourceId;
+        private List<Member> list;
+
+        public MemberAdapter(Context context, int resource, List<Member> objects) {
+            super(context, resource, objects);
+            inflater = LayoutInflater.from(context);
+            resourceId = resource;
+            list = objects;
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View view;
+            // 初始化view
+            if (convertView == null) {
+                view = inflater.inflate(resourceId, parent, false);
+                TextView nicknameTV = (TextView)view.findViewById(R.id.nickname);
+                TextView isAdminTV = (TextView)view.findViewById(R.id.is_admin);
+                MemberViewHolder holder = new MemberViewHolder(nicknameTV, isAdminTV);
+                view.setTag(holder);
+            } else {
+                view = convertView;
+            }
+            // 填充内容
+            MemberViewHolder holder = (MemberViewHolder)view.getTag();
+            Member member = list.get(position);
+            holder.nicknameTV.setText(member.nickname);
+            if (member.admin) {
+                holder.isAdminTV.setVisibility(View.VISIBLE);
+            } else {
+                holder.isAdminTV.setVisibility(View.GONE);
+            }
+            return view;
+        }
+    }
+
+    static class MemberViewHolder {
+        TextView nicknameTV;
+        TextView isAdminTV;
+
+        public MemberViewHolder(TextView nicknameTV, TextView isAdminTV) {
+            this.nicknameTV = nicknameTV;
+            this.isAdminTV = isAdminTV;
+        }
     }
 
     static class MyHandler extends Handler {
@@ -213,6 +300,7 @@ public class RoomActivity extends Activity {
                                 ChatMessage chatMessage = new ChatMessage(nickname, message, ChatMessage.RECEIVE, System.currentTimeMillis(), false);
                                 activity.myChatView.getMyChatMessageList().add(chatMessage);
                                 activity.myChatView.getAdapter().notifyDataSetChanged();
+                                // TODO 列表跳转最后
                             }
                             break;
                         }
@@ -235,6 +323,41 @@ public class RoomActivity extends Activity {
                                 }
                             }
                             break;
+                        }
+                        case Protocol.GET_ROOM_MEMBER: { // 房间成员列表信息
+                            int index = 0;
+                            int stateCode = content.getInt(index++);
+                            switch (stateCode) {
+                                case Protocol.GET_ROOM_MEMBER_SUCCESS: { // 获取成员列表成功
+                                    // 检查房间id
+                                    int roomId = content.getInt(index++);
+                                    if (roomId != activity.roomId) {
+                                        showToast("获取了错误房间的成员列表");
+                                        break;
+                                    }
+                                    // 获取房间成员
+                                    int memberNumber = content.getInt(index++);
+                                    activity.memberList.clear();
+                                    for (int i = 0; i < memberNumber; i++) {
+                                        String username = content.getString(index++);
+                                        String nickname = content.getString(index++);
+                                        boolean admin = content.getBoolean(index++);
+                                        activity.memberList.add(new Member(nickname, admin));
+                                    }
+                                    // 更新成员列表
+                                    activity.memberAdapter.notifyDataSetChanged();
+                                    showToast("成员列表已更新");
+                                    break;
+                                }
+                                case Protocol.GET_ROOM_MEMBER_UNKNOW_PRO: { // 未知错误
+                                    showToast("获取成员列表出现未知错误");
+                                    break;
+                                }
+                                case Protocol.GET_ROOM_MEMBER_WRONG_ROOM_ID: { // 房间id错误
+                                    showToast("在错误的房间获取成员列表");
+                                    break;
+                                }
+                            }
                         }
                     }
                 } catch (JSONException e) {

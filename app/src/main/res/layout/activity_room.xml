@@ -10,12 +10,16 @@
         android:orientation="vertical"
         android:paddingLeft="@dimen/trigger_button_width">
 
-        <TextView
+        <ListView
+            android:id="@+id/member_list"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="@android:color/holo_blue_dark"
-            android:text="member" />
+            android:layout_weight="1" />
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:src="@android:color/darker_gray"/>
 
         <com.app.superxlcr.mypaintboard.view.MyChatView
             android:id="@+id/my_chat_view"

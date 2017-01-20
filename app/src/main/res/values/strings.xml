@@ -18,6 +18,7 @@
     <string name="edit_info_password">密码不填则表示不作更改</string>
     <string name="send">发送</string>
     <string name="trigger_button">聊\n天\n界\n面</string>
+    <string name="admin">管理员</string>
 
     <string name="dummy">-1</string>
 </resources>
