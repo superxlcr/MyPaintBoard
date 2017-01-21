@@ -30,9 +30,12 @@ public class ChatController {
     }
 
     private ProtocolListener sendMsgListener; // 发送消息用监听器
-    private ProtocolListener receiveMsgListener; // 接受消息用监听器
+    private ProtocolListener receiveMsgListener; // 接收消息用监听器
 
-    private ChatController() {}
+    private ChatController() {
+        sendMsgListener = null;
+        receiveMsgListener = null;
+    }
 
     /**
      * 发送聊天消息

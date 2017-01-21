@@ -28,7 +28,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.lang.ref.SoftReference;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +55,8 @@ public class RoomActivity extends Activity {
     // 聊天相关
     private BadgeView badgeView;
     private MyChatView myChatView;
-    private int newMessageNumber;
+    private int newMessageNumber; // 新消息条目数
+    private int oldPosition; // 旧消息位置
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +110,7 @@ public class RoomActivity extends Activity {
         MemberController.getInstance().getRoomMember(this, roomId, System.currentTimeMillis());
 
         // 聊天view
+        oldPosition = 0;
         myChatView = (MyChatView) findViewById(R.id.my_chat_view);
         myChatView.getSendBtn().setOnClickListener(new View.OnClickListener() {
             @Override
@@ -300,7 +301,11 @@ public class RoomActivity extends Activity {
                                 ChatMessage chatMessage = new ChatMessage(nickname, message, ChatMessage.RECEIVE, System.currentTimeMillis(), false);
                                 activity.myChatView.getMyChatMessageList().add(chatMessage);
                                 activity.myChatView.getAdapter().notifyDataSetChanged();
-                                // TODO 列表跳转最后
+                                // 列表跳转到最新消息位置
+                                if (activity.oldPosition != 0) {
+                                    activity.myChatView.getChatListView().setSelection(activity.oldPosition);
+                                }
+                                activity.oldPosition = activity.myChatView.getMyChatMessageList().size();
                             }
                             break;
                         }
