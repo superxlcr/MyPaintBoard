@@ -1,6 +1,5 @@
 package com.app.superxlcr.mypaintboard.view;
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -9,15 +8,17 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,13 +44,10 @@ import java.util.List;
  * 房间列表主界面
  */
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     private static MyHandler handler = new MyHandler();
 
-    private TextView usernameTV;
-    private ImageView editInfoIV;
-    private ImageView logoutIV;
     private Button createRoomBtn;
     private Button updateRoomListBtn;
 
@@ -66,7 +64,6 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         // 设置昵称
-        usernameTV = (TextView) findViewById(R.id.username);
         if (UserController.getInstance().getUser() == null) {
             // 没有user说明没有登录，重新进行登录
             showToast("您还没有进行登录，请进行登录");
@@ -107,28 +104,6 @@ public class MainActivity extends Activity {
         });
 
         // 初始化view
-        editInfoIV = (ImageView) findViewById(R.id.edit_info);
-        editInfoIV.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // 编辑个人信息界面
-                Intent intent = new Intent(MainActivity.this, EditInfoActivity.class);
-                startActivity(intent);
-            }
-        });
-        logoutIV = (ImageView) findViewById(R.id.logout);
-        logoutIV.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // 登录注销
-                // 关闭与服务器连接
-                CommunicationController.getInstance(MainActivity.this).clearSocket();
-                // 返回登录界面
-                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                startActivity(intent);
-                finish();
-            }
-        });
         createRoomBtn = (Button) findViewById(R.id.create_room);
         createRoomBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -184,7 +159,37 @@ public class MainActivity extends Activity {
         User user = UserController.getInstance().getUser();
         String username = user.getUsername();
         String nickname = user.getNickname();
-        usernameTV.setText(nickname + "(" + username + ")");
+        setTitle(nickname + "(" + username + ")");
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main_activity, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.edit_info: {
+                // 编辑个人信息界面
+                Intent intent = new Intent(MainActivity.this, EditInfoActivity.class);
+                startActivity(intent);
+                break;
+            }
+            case R.id.logout: {
+                // 登录注销
+                // 关闭与服务器连接
+                CommunicationController.getInstance(MainActivity.this).clearSocket();
+                // 返回登录界面
+                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                startActivity(intent);
+                finish();
+                break;
+            }
+        }
+        return true;
     }
 
     private void showToast(String msg) {

@@ -10,6 +10,7 @@ import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.utils.ProtocolListener;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -32,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class CommunicationController {
 
-    // 服务器IP
+    // TODO 服务器IP
     public static String SERVER_IP = "192.168.1.108";
 
     private static String TAG = CommunicationController.class.getSimpleName();
@@ -117,7 +118,7 @@ public class CommunicationController {
                     try {
                         Reader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
                         while (socket != null) {
-                            char data[] = new char[999];
+                            char data[] = new char[99999];
                             int len;
                             while ((len = reader.read(data)) != -1) {
                                 String jsonString = new String(data, 0, len);

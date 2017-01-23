@@ -54,15 +54,17 @@ public class DrawController {
         try {
             JSONArray jsonArray = new JSONArray();
             jsonArray.put(roomId);
-            // line (pointNumber + point (x , y) + color + width + isEraser)
+            // line (pointNumber + point (x , y) + color + width + isEraser + width + height)
             jsonArray.put(line.getPointList().size());
             for (Point point : line.getPointList()) {
                 jsonArray.put(point.getX());
                 jsonArray.put(point.getY());
             }
             jsonArray.put(line.getColor());
-            jsonArray.put(line.getWidth());
+            jsonArray.put(line.getPaintWidth());
             jsonArray.put(line.isEraser());
+            jsonArray.put(line.getWidth());
+            jsonArray.put(line.getHeight());
             Protocol sendProtocol = new Protocol(Protocol.DRAW, time, jsonArray);
             // 注册监听器
             sendDrawListener = new ProtocolListener() {

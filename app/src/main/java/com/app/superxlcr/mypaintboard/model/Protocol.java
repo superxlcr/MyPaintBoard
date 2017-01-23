@@ -13,7 +13,7 @@ public class Protocol {
 	// 服务器端口
 	public static final int PORT = 9999;
 	// TODO 心跳包间隔
-    public static long HEART_BEAT_PERIOD = 5000;
+	public static long HEART_BEAT_PERIOD = 5000;
 
 	// 指令类型
 
@@ -81,7 +81,7 @@ public class Protocol {
 	public static final int GET_ROOM_MEMBER_SUCCESS = 0; // 成功才有后续内容
 	public static final int GET_ROOM_MEMBER_WRONG_ROOM_ID = GET_ROOM_MEMBER_SUCCESS + 1; // 房间id错误
 	public static final int GET_ROOM_MEMBER_UNKNOW_PRO = GET_ROOM_MEMBER_WRONG_ROOM_ID + 1; // 未知错误
-	
+
 	// 聊天消息
 	// c to s: roomId + message
 	// s to c: stateCode
@@ -93,10 +93,11 @@ public class Protocol {
 	// 聊天消息推送
 	// push: roomId + nickname + message
 	public static final int MESSAGE_PUSH = MESSAGE + 1;
-	
+
 	// 绘制消息
-	// c to s: roomId + line (pointNumber + point (x , y) + color + width +
-	// isEraser)
+	// c to s: roomId + line (pointNumber + point (x , y) +
+	// color + paintWidth +
+	// isEraser + width + height)
 	// s to c: stateCode
 	public static final int DRAW = MESSAGE_PUSH + 1;
 	public static final int DRAW_SUCCESS = 0;
@@ -104,14 +105,15 @@ public class Protocol {
 	public static final int DRAW_UNKNOW_PRO = DRAW_WRONG_ROOM_ID + 1; // 未知错误
 
 	// 绘制消息推送
-	// push: roomId + username + line (pointNumber + point (x , y) +
-	// color + width + isEraser)
+	// push: roomId + username + line (pointNumber + point (x ,
+	// y) +
+	// color + width + isEraser + width + height)
 	public static final int DRAW_PUSH = DRAW + 1;
-	
+
 	// 同步绘制消息
 	// c to s: roomId
 	// s to c: stateCode + lineNumber + line (pointNumber + point (x , y) +
-	// color + width + isEraser)
+	// color + width + isEraser + width + height)
 	public static final int GET_DRAW_LIST = DRAW_PUSH + 1;
 	public static final int GET_DRAW_LIST_SUCCESS = 0;
 	public static final int GET_DRAW_LIST_WRONG_ROOM_ID = GET_DRAW_LIST_SUCCESS + 1; // 错误的房间id
@@ -123,7 +125,7 @@ public class Protocol {
 	public static final int HEART_BEAT = GET_DRAW_LIST + 1;
 
 	// 协议：指令 + 时间戳（防重复功能） + 内容
-	
+
 	public static final String ORDER = "order";
 	public static final String TIME = "time";
 	public static final String CONTENT = "content";
@@ -155,17 +157,13 @@ public class Protocol {
 		this.jsonStr = jsonObject.toString();
 	}
 
-	public Protocol(String jsonStr) {
+	public Protocol(String jsonStr) throws JSONException {
 		this.jsonStr = jsonStr;
-		try {
-			JSONObject jsonObject = new JSONObject(jsonStr);
-			this.order = jsonObject.getInt(ORDER);
-			this.time = jsonObject.getLong(TIME);
-			String contentStr = jsonObject.getString(CONTENT);
-			this.content = new JSONArray(contentStr);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+		JSONObject jsonObject = new JSONObject(jsonStr);
+		this.order = jsonObject.getInt(ORDER);
+		this.time = jsonObject.getLong(TIME);
+		String contentStr = jsonObject.getString(CONTENT);
+		this.content = new JSONArray(contentStr);
 	}
 
 	public int getOrder() {
@@ -232,8 +230,14 @@ public class Protocol {
 		case MESSAGE:
 			orderStr = "MESSAGE";
 			break;
+		case MESSAGE_PUSH:
+			orderStr = "MESSAGE_PUSH";
+			break;
 		case DRAW:
 			orderStr = "DRAW";
+			break;
+		case DRAW_PUSH:
+			orderStr = "DRAW_PUSH";
 			break;
 		case GET_DRAW_LIST:
 			orderStr = "GET_DRAW_LIST";

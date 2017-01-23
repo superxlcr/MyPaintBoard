@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,12 +17,14 @@ import android.widget.Toast;
 
 import com.app.superxlcr.mypaintboard.R;
 import com.app.superxlcr.mypaintboard.controller.ChatController;
+import com.app.superxlcr.mypaintboard.controller.DrawController;
 import com.app.superxlcr.mypaintboard.controller.MemberController;
 import com.app.superxlcr.mypaintboard.controller.RoomController;
 import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.ChatMessage;
+import com.app.superxlcr.mypaintboard.model.Line;
+import com.app.superxlcr.mypaintboard.model.Point;
 import com.app.superxlcr.mypaintboard.model.Protocol;
-import com.app.superxlcr.mypaintboard.model.User;
 import com.readystatesoftware.viewbadger.BadgeView;
 
 import org.json.JSONArray;
@@ -36,12 +39,16 @@ import java.util.List;
  * 房间界面
  */
 
-public class RoomActivity extends Activity {
+public class RoomActivity extends AppCompatActivity {
 
     private static MyHandler handler = new MyHandler();
 
     private int roomId;
+    private String username;
     private String nickname;
+
+    // 绘制view
+    private MyPaintView myPaintView;
 
     // 层叠view
     private CascadeLayout cascadeLayout;
@@ -62,7 +69,7 @@ public class RoomActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
-
+        // TODO 进入收起键盘
         handler.setReference(new SoftReference<RoomActivity>(this));
 
         // 初始化房间id
@@ -72,14 +79,22 @@ public class RoomActivity extends Activity {
         }
         roomId = RoomController.getInstance().getRoom().getId();
 
-        // 初始化用户名
+        // 初始化用户名昵称
         if (UserController.getInstance().getUser() == null) {
             Toast.makeText(this, "您还未进行登录", Toast.LENGTH_SHORT).show();
             finish();
         }
+        username = UserController.getInstance().getUser().getUsername();
         nickname = UserController.getInstance().getUser().getNickname();
 
         // TODO 初始化view
+        // 绘制view
+        myPaintView = (MyPaintView) findViewById(R.id.my_paint_view);
+        myPaintView.setHandler(handler);
+        myPaintView.setRoomId(roomId);
+        // 设置监听器
+        DrawController.getInstance().setReceiveDrawHandler(this, handler);
+
         // 层叠view
         cascadeLayout = (CascadeLayout) findViewById(R.id.cascade_layout);
         triggerView = (TextView) findViewById(R.id.trigger_view);
@@ -172,15 +187,15 @@ public class RoomActivity extends Activity {
             // 初始化view
             if (convertView == null) {
                 view = inflater.inflate(resourceId, parent, false);
-                TextView nicknameTV = (TextView)view.findViewById(R.id.nickname);
-                TextView isAdminTV = (TextView)view.findViewById(R.id.is_admin);
+                TextView nicknameTV = (TextView) view.findViewById(R.id.nickname);
+                TextView isAdminTV = (TextView) view.findViewById(R.id.is_admin);
                 MemberViewHolder holder = new MemberViewHolder(nicknameTV, isAdminTV);
                 view.setTag(holder);
             } else {
                 view = convertView;
             }
             // 填充内容
-            MemberViewHolder holder = (MemberViewHolder)view.getTag();
+            MemberViewHolder holder = (MemberViewHolder) view.getTag();
             Member member = list.get(position);
             holder.nicknameTV.setText(member.nickname);
             if (member.admin) {
@@ -363,6 +378,52 @@ public class RoomActivity extends Activity {
                                     break;
                                 }
                             }
+                            break;
+                        }
+                        case Protocol.DRAW: { // 绘制反馈
+                            int stateCode = content.getInt(0);
+                            switch (stateCode) {
+                                case Protocol.DRAW_SUCCESS: { // TODO 发送绘制线段成功
+//                                    showToast("发送绘制成功");
+                                    break;
+                                }
+                                case Protocol.DRAW_UNKNOW_PRO: { // 未知错误
+                                    showToast("发生未知错误，发送绘制线段失败");
+                                    break;
+                                }
+                                case Protocol.DRAW_WRONG_ROOM_ID: { // 房间id错误
+                                    showToast("房间id错误，发送绘制线段失败");
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case Protocol.DRAW_PUSH: { // 绘制推送
+                            int index = 0;
+                            int roomId = content.getInt(index++);
+                            String username = content.getString(index++);
+
+                            if (roomId != activity.roomId) { // 判断房间id
+                                showToast("接收到无效的绘制线段，房间id错误");
+                            } else if (username == activity.username) {
+                                showToast("接收到无效的绘制线段，用户名重复");
+                            } else { // 绘制线段
+                                int pointNumber = content.getInt(index++);
+                                Point points[] = new Point[pointNumber];
+                                for (int i = 0; i < pointNumber; i++) {
+                                    double x = content.getDouble(index++);
+                                    double y = content.getDouble(index++);
+                                    points[i] = new Point(x, y);
+                                }
+                                int color = content.getInt(index++);
+                                double paintWidth = content.getDouble(index++);
+                                boolean isEraser = content.getBoolean(index++);
+                                int width = content.getInt(index++);
+                                int height = content.getInt(index++);
+                                Line line = new Line(points, color, paintWidth, isEraser, width, height);
+                                activity.myPaintView.drawLine(line);
+                            }
+                            break;
                         }
                     }
                 } catch (JSONException e) {

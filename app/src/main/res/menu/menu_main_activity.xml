@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/edit_info"
+        android:icon="@mipmap/edit_info_white"
+        android:title="@string/edit_info"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/logout"
+        android:icon="@mipmap/logout_white"
+        android:title="@string/logout"
+        app:showAsAction="always" />
+</menu>

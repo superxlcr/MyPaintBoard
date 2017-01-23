@@ -35,11 +35,11 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <ImageView
+        <com.app.superxlcr.mypaintboard.view.MyPaintView
+            android:id="@+id/my_paint_view"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:src="@android:color/black" />
+            android:layout_weight="1" />
 
         <TextView
             android:id="@+id/trigger_view"

@@ -13,15 +13,19 @@ public class Line {
 	
 	private List<Point> pointList;
 	private int color;
-	private int width;
+	private double paintWidth;
 	private boolean isEraser;
+	private int width;
+	private int height;
 	
-	public Line(Point[] points, int color, int width, boolean isEraser) {
+	public Line(Point[] points, int color, double paintWidth, boolean isEraser, int width, int height) {
 		pointList = new ArrayList<>();
 		Collections.addAll(pointList, points);
 		this.color = color;
-		this.width = width;
+		this.paintWidth = paintWidth;
 		this.isEraser = isEraser;
+		this.width = width;
+		this.height = height;
 	}
 
 	public List<Point> getPointList() {
@@ -46,6 +50,22 @@ public class Line {
 
 	public void setWidth(int width) {
 		this.width = width;
+	}
+
+	public double getPaintWidth() {
+		return paintWidth;
+	}
+
+	public void setPaintWidth(double paintWidth) {
+		this.paintWidth = paintWidth;
+	}
+
+	public int getHeight() {
+		return height;
+	}
+
+	public void setHeight(int height) {
+		this.height = height;
 	}
 
 	public boolean isEraser() {
