@@ -6,6 +6,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -26,8 +28,9 @@ import java.util.List;
 
 public class MyPaintView extends View {
 
-    // TODO 貌似越大越好
-    private static final int POINT_ARRAY_SIZE = 15; // 每组发送的点数大小
+    private static final int POINT_ARRAY_SIZE = 10; // 每组发送的点数大小
+    private static final int REPEAT_TIMES = 5; // 发送失败重新发送次数
+    private static final int FAIL_RELAX_TIME = 100; // 发送失败间隔时间
 
     // 点击坐标
     private float lastX = 0, lastY = 0;
@@ -37,6 +40,10 @@ public class MyPaintView extends View {
     private Path path;
     // 画笔
     private Paint paint;
+    // 画笔颜色
+    private int paintColor;
+    // 画笔宽度
+    private float paintWidth;
     // 图片缓冲内存
     private Bitmap cacheBitmap;
     // 画布缓冲区
@@ -64,9 +71,8 @@ public class MyPaintView extends View {
         // 反锯齿
         linePaint.setAntiAlias(true);
         linePaint.setDither(true);
-        // TODO 擦除模式
         if (line.isEraser()) {
-
+            linePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         }
         List<Point> list = line.getPointList();
         Path linePath = new Path();
@@ -88,7 +94,47 @@ public class MyPaintView extends View {
         invalidate();
     }
 
-    // TODO 设置线段颜色宽度擦除
+    /**
+     * 设置画笔颜色
+     *
+     * @param color 颜色
+     */
+    public void setPaintColor(int color) {
+        paintColor = color;
+        if (!isEraser) {
+            paint.setColor(color);
+        }
+    }
+
+    /**
+     * 设置画笔宽度
+     *
+     * @param width 宽度
+     */
+    public void setPaintWidth(float width) {
+        paintWidth = width;
+        if (!isEraser) {
+            paint.setStrokeWidth(width);
+        }
+    }
+
+    public boolean isEraser() {
+        return isEraser;
+    }
+
+    public void setEraser(boolean eraser) {
+        isEraser = eraser;
+        // 擦除模式
+        if (isEraser) {
+            paint.setColor(Color.TRANSPARENT);
+            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+            paint.setStrokeWidth(40);
+        } else {
+            paint.setColor(paintColor);
+            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_OVER));
+            paint.setStrokeWidth(paintWidth);
+        }
+    }
 
     public int getRoomId() {
         return roomId;
@@ -123,14 +169,18 @@ public class MyPaintView extends View {
             path = new Path();
             // 初始化画笔
             paint = new Paint(Paint.DITHER_FLAG); // 防抖动
-            paint.setColor(Color.BLACK); // 颜色
+            paintColor = Color.BLACK;
+            paint.setColor(paintColor); // 颜色
             paint.setStyle(Paint.Style.STROKE); // 实心
-            paint.setStrokeWidth(3); // 长度
+            paintWidth = 1;
+            paint.setStrokeWidth(paintWidth); // 长度
             // 反锯齿
             paint.setAntiAlias(true);
             paint.setDither(true);
             // 画笔模式
             isEraser = false;
+            // 后画的线段在上方
+            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_OVER));
             // 初始化点数列表
             pointList = new ArrayList<>();
         }
@@ -165,8 +215,16 @@ public class MyPaintView extends View {
                         points[i] = pointList.get(i);
                     }
                     Line line = new Line(points, paint.getColor(), paint.getStrokeWidth(), isEraser, width, height);
-                    // TODO 断线重发机制
-                    DrawController.getInstance().sendDraw(getContext(), handler, System.currentTimeMillis(), roomId, line);
+                    // 断线重发机制
+                    int counter = 0;
+                    while (!DrawController.getInstance().sendDraw(getContext(), handler, System.currentTimeMillis(), roomId, line) && counter < REPEAT_TIMES) {
+                        counter++;
+                        try {
+                            Thread.sleep(FAIL_RELAX_TIME);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     // 列表只留下最后一个点
                     for (int i = 0; i < POINT_ARRAY_SIZE - 1; i++) {
                         pointList.remove(0);
@@ -175,7 +233,6 @@ public class MyPaintView extends View {
                 break;
             }
             case MotionEvent.ACTION_UP: { // 把线段绘制到缓存中
-                cacheCanvas.drawPath(path, paint);
                 path.reset();
                 // 绘制剩余的线段
                 if (handler == null) {
@@ -186,8 +243,16 @@ public class MyPaintView extends View {
                     points[i] = pointList.get(i);
                 }
                 Line line = new Line(points, paint.getColor(), paint.getStrokeWidth(), isEraser, width, height);
-                // TODO 断线重发机制
-                DrawController.getInstance().sendDraw(getContext(), handler, System.currentTimeMillis(), roomId, line);
+                // 断线重发机制
+                int counter = 0;
+                while (!DrawController.getInstance().sendDraw(getContext(), handler, System.currentTimeMillis(), roomId, line) && counter < REPEAT_TIMES) {
+                    counter++;
+                    try {
+                        Thread.sleep(FAIL_RELAX_TIME);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
                 // 清空列表
                 pointList.clear();
                 break;
@@ -200,10 +265,10 @@ public class MyPaintView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         Paint bmpPaint = new Paint();
+        // 绘制当前的轨迹到缓冲区
+        cacheCanvas.drawPath(path, paint);
         // 绘制之前的缓存轨迹
         canvas.drawBitmap(cacheBitmap, 0, 0, bmpPaint);
-        // 绘制当前的轨迹
-        canvas.drawPath(path, paint);
     }
 
     public MyPaintView(Context context) {

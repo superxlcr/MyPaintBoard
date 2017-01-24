@@ -122,17 +122,22 @@ public class CommunicationController {
                             int len;
                             while ((len = reader.read(data)) != -1) {
                                 String jsonString = new String(data, 0, len);
-                                Protocol protocol = new Protocol(jsonString);
-                                Log.d(TAG, protocol.toString());
-                                // 分发处理协议内容
-                                for (ProtocolListener listener : listenerList) {
-                                    if (listener.onReceive(protocol)) { // 返回true则终止传递
-                                        break;
+                                try {
+                                    Protocol protocol = new Protocol(jsonString);
+                                    Log.d(TAG, protocol.toString());
+                                    // 分发处理协议内容
+                                    for (ProtocolListener listener : listenerList) {
+                                        if (listener.onReceive(protocol)) { // 返回true则终止传递
+                                            break;
+                                        }
                                     }
+                                } catch (JSONException e) {
+                                    // 协议解析错误，丢弃内容
+                                    e.printStackTrace();
                                 }
                             }
                         }
-                    } catch (Exception e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                         clearSocket();
                     }
@@ -156,6 +161,7 @@ public class CommunicationController {
             }
             socket = null;
         }
+        // TODO 重置登录状态
     }
 
     /**
@@ -201,6 +207,7 @@ public class CommunicationController {
             return true;
         } catch (IOException e) {
             e.printStackTrace();
+            clearSocket();
             return false;
         }
     }

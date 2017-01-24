@@ -21,7 +21,9 @@
         <activity android:name=".view.RegisterActivity" />
         <activity android:name=".view.MainActivity" />
         <activity android:name=".view.EditInfoActivity" />
-        <activity android:name=".view.RoomActivity" />
+        <activity
+            android:name=".view.RoomActivity"
+            android:windowSoftInputMode="stateHidden" />
     </application>
 
 </manifest>

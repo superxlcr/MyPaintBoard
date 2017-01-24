@@ -2,12 +2,16 @@ package com.app.superxlcr.mypaintboard.view;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -69,7 +73,6 @@ public class RoomActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
-        // TODO 进入收起键盘
         handler.setReference(new SoftReference<RoomActivity>(this));
 
         // 初始化房间id
@@ -87,7 +90,8 @@ public class RoomActivity extends AppCompatActivity {
         username = UserController.getInstance().getUser().getUsername();
         nickname = UserController.getInstance().getUser().getNickname();
 
-        // TODO 初始化view
+        // TODO 语音系统
+
         // 绘制view
         myPaintView = (MyPaintView) findViewById(R.id.my_paint_view);
         myPaintView.setHandler(handler);
@@ -155,6 +159,67 @@ public class RoomActivity extends AppCompatActivity {
         // 退出房间
         RoomController.getInstance().exitRoom(this, handler, System.currentTimeMillis());
         super.onDestroy();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_room_activity, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // 设置选中效果
+        item.setChecked(true);
+        switch (item.getItemId()) {
+            case R.id.black: // 黑色
+                myPaintView.setPaintColor(Color.BLACK);
+                break;
+            case R.id.blue: // 蓝色
+                myPaintView.setPaintColor(Color.BLUE);
+                break;
+            case R.id.cyan: // 青色
+                myPaintView.setPaintColor(Color.CYAN);
+                break;
+            case R.id.gray: // 灰色
+                myPaintView.setPaintColor(Color.GRAY);
+                break;
+            case R.id.green: // 绿色
+                myPaintView.setPaintColor(Color.GREEN);
+                break;
+            case R.id.magenta: // 洋红色
+                myPaintView.setPaintColor(Color.MAGENTA);
+                break;
+            case R.id.red: // 红色
+                myPaintView.setPaintColor(Color.RED);
+                break;
+            case R.id.yellow: // 黄色
+                myPaintView.setPaintColor(Color.YELLOW);
+                break;
+            case R.id.paint_width_1:
+                myPaintView.setPaintWidth(1);
+                break;
+            case R.id.paint_width_5:
+                myPaintView.setPaintWidth(5);
+                break;
+            case R.id.paint_width_10:
+                myPaintView.setPaintWidth(10);
+                break;
+            case R.id.paint_width_15:
+                myPaintView.setPaintWidth(15);
+                break;
+            case R.id.paint_width_20:
+                myPaintView.setPaintWidth(20);
+                break;
+            case R.id.paint: // 画笔模式
+                myPaintView.setEraser(false);
+                break;
+            case R.id.eraser: // 擦除模式
+                myPaintView.setEraser(true);
+                break;
+        }
+        return true;
     }
 
     static class Member {
@@ -230,7 +295,6 @@ public class RoomActivity extends AppCompatActivity {
 
         @Override
         public void handleMessage(Message msg) {
-            // TODO 处理指令
             RoomActivity activity = reference.get();
             if (activity != null && msg != null && msg.obj instanceof Protocol) {
                 Protocol protocol = (Protocol) msg.obj;

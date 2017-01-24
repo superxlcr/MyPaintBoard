@@ -29,6 +29,8 @@
         android:gravity="center"
         android:hint="@string/edit_info_password"
         android:inputType="textPassword"
+        android:maxLines="1"
+        android:singleLine="true"
         android:textSize="16sp" />
 
     <EditText
@@ -38,6 +40,8 @@
         android:layout_margin="5dp"
         android:gravity="center"
         android:hint="@string/nickname"
+        android:maxLines="1"
+        android:singleLine="true"
         android:textSize="16sp" />
 
     <LinearLayout
