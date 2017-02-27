@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -31,6 +32,7 @@ import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.Room;
 import com.app.superxlcr.mypaintboard.model.User;
 import com.app.superxlcr.mypaintboard.utils.LoadingDialogUtils;
+import com.app.superxlcr.mypaintboard.utils.MyLog;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -45,6 +47,8 @@ import java.util.List;
  */
 
 public class MainActivity extends AppCompatActivity {
+
+    private static String TAG = MainActivity.class.getSimpleName();
 
     private static MyHandler handler = new MyHandler();
 
@@ -66,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         // 设置昵称
         if (UserController.getInstance().getUser() == null) {
             // 没有user说明没有登录，重新进行登录
+            MyLog.d(TAG, "获取登录用户失败！");
             showToast("您还没有进行登录，请进行登录");
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
@@ -305,7 +310,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     } catch (JSONException e) {
-                        e.printStackTrace();
+                        MyLog.e(TAG, Log.getStackTraceString(e));
                         showToast("协议内容解析错误");
                     }
                 }

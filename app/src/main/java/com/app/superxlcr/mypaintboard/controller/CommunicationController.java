@@ -3,10 +3,12 @@ package com.app.superxlcr.mypaintboard.controller;
 import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.wifi.WifiConfiguration;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.app.superxlcr.mypaintboard.model.Protocol;
+import com.app.superxlcr.mypaintboard.utils.MyLog;
 import com.app.superxlcr.mypaintboard.utils.ProtocolListener;
 
 import org.json.JSONArray;
@@ -33,8 +35,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class CommunicationController {
 
-    // TODO 服务器IP
-    public static String SERVER_IP = "192.168.1.108";
+    // 服务器IP
+    public static String SERVER_IP = "172.20.10.4";
 
     private static String TAG = CommunicationController.class.getSimpleName();
 
@@ -85,7 +87,7 @@ public class CommunicationController {
                 // 连接服务器
                 try {
                     socket = new Socket(SERVER_IP, Protocol.PORT);
-                    Log.d(TAG, "连接服务器成功");
+                    MyLog.d(TAG, "连接服务器成功");
 
                     // 定时器子线程，开始发送心跳包
                     timer = new Timer();
@@ -106,13 +108,13 @@ public class CommunicationController {
                                 }
                             } catch (IOException e) {
                                 // 出现错误，终止定时器，关闭连接
-                                e.printStackTrace();
+                                MyLog.e(TAG, Log.getStackTraceString(e));
                                 clearSocket();
                                 timer.cancel();
                             }
                         }
                     }, 0, Protocol.HEART_BEAT_PERIOD);
-                    Log.d(TAG, "心跳包定时器设置成功");
+                    MyLog.d(TAG, "心跳包定时器设置成功");
 
                     // 开始监听信息
                     try {
@@ -124,7 +126,10 @@ public class CommunicationController {
                                 String jsonString = new String(data, 0, len);
                                 try {
                                     Protocol protocol = new Protocol(jsonString);
-                                    Log.d(TAG, protocol.toString());
+                                    // 打印非心跳包的信息
+                                    if (protocol.getOrder() != Protocol.HEART_BEAT) {
+                                        MyLog.d(TAG, "len :" + len + "\n" + protocol.toString());
+                                    }
                                     // 分发处理协议内容
                                     for (ProtocolListener listener : listenerList) {
                                         if (listener.onReceive(protocol)) { // 返回true则终止传递
@@ -133,16 +138,16 @@ public class CommunicationController {
                                     }
                                 } catch (JSONException e) {
                                     // 协议解析错误，丢弃内容
-                                    e.printStackTrace();
+                                    MyLog.e(TAG, Log.getStackTraceString(e));
                                 }
                             }
                         }
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        MyLog.e(TAG, Log.getStackTraceString(e));
                         clearSocket();
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    MyLog.e(TAG, Log.getStackTraceString(e));
                     socket = null;
                 }
             }
@@ -153,11 +158,12 @@ public class CommunicationController {
      * 清理并关闭连接
      */
     public void clearSocket() {
+        MyLog.d(TAG, "已清除socket连接");
         if (socket != null) {
             try {
                 socket.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                MyLog.e(TAG, Log.getStackTraceString(e));
             }
             socket = null;
         }
@@ -206,7 +212,7 @@ public class CommunicationController {
             writer.flush();
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            MyLog.e(TAG, Log.getStackTraceString(e));
             clearSocket();
             return false;
         }

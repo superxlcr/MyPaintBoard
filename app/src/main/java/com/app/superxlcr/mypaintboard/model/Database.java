@@ -1,5 +1,9 @@
 package com.app.superxlcr.mypaintboard.model;
 
+import android.util.Log;
+
+import com.app.superxlcr.mypaintboard.utils.MyLog;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -11,6 +15,8 @@ import java.sql.Statement;
  *
  */
 public class Database {
+
+	private static final String TAG = Database.class.getSimpleName();
 
 	// 数据库端口
 	private static final int port = 3306;
@@ -38,7 +44,7 @@ public class Database {
 			Class.forName("com.mysql.jdbc.Driver");
 			conn = DriverManager.getConnection(mysqlConnectStr, mysqlAccount, mysqlPassword);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLog.e(TAG, Log.getStackTraceString(e));
 			System.exit(0);
 		}
 	}
@@ -49,7 +55,7 @@ public class Database {
 			statement.execute(sql);
 			return true;
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLog.e(TAG, Log.getStackTraceString(e));
 		}
 		return false;
 	}
@@ -59,7 +65,7 @@ public class Database {
 			Statement statement = conn.createStatement();
 			return statement.executeQuery(sql);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLog.e(TAG, Log.getStackTraceString(e));
 		}
 		return null;
 	}

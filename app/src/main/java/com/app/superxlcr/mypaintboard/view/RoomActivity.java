@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -29,6 +30,7 @@ import com.app.superxlcr.mypaintboard.model.ChatMessage;
 import com.app.superxlcr.mypaintboard.model.Line;
 import com.app.superxlcr.mypaintboard.model.Point;
 import com.app.superxlcr.mypaintboard.model.Protocol;
+import com.app.superxlcr.mypaintboard.utils.MyLog;
 import com.readystatesoftware.viewbadger.BadgeView;
 
 import org.json.JSONArray;
@@ -44,6 +46,8 @@ import java.util.List;
  */
 
 public class RoomActivity extends AppCompatActivity {
+
+    private static String TAG = RoomActivity.class.getSimpleName();
 
     private static MyHandler handler = new MyHandler();
 
@@ -77,6 +81,7 @@ public class RoomActivity extends AppCompatActivity {
 
         // 初始化房间id
         if (RoomController.getInstance().getRoom() == null) {
+            MyLog.d(TAG, "获取房间id失败！");
             Toast.makeText(this, "您还未进入任何房间", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -84,6 +89,7 @@ public class RoomActivity extends AppCompatActivity {
 
         // 初始化用户名昵称
         if (UserController.getInstance().getUser() == null) {
+            MyLog.d(TAG, "获取已登录用户失败！");
             Toast.makeText(this, "您还未进行登录", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -98,6 +104,9 @@ public class RoomActivity extends AppCompatActivity {
         myPaintView.setRoomId(roomId);
         // 设置监听器
         DrawController.getInstance().setReceiveDrawHandler(this, handler);
+
+        // 获取旧线段
+        DrawController.getInstance().getDrawList(this, handler, System.currentTimeMillis(), roomId);
 
         // 层叠view
         cascadeLayout = (CascadeLayout) findViewById(R.id.cascade_layout);
@@ -332,7 +341,8 @@ public class RoomActivity extends AppCompatActivity {
                                     }
                                     // 更改动画
                                     activity.myChatView.getAdapter().notifyDataSetChanged();
-                                    showToast("当前房间id发生错误，消息发送失败，请退出重试");
+                                    MyLog.d(TAG, "当前房间id发生错误，消息发送失败！");
+                                    showToast("消息发送失败，请退出房间重试");
                                     break;
                                 }
                                 case Protocol.MESSAGE_UNKNOW_PRO: { // 未知错误
@@ -362,9 +372,9 @@ public class RoomActivity extends AppCompatActivity {
 
                             // 判断消息是否有效
                             if (roomId != activity.roomId) {
-                                showToast("接收到无效的消息，房间id错误");
+                                MyLog.d(TAG, "接收到无效的消息推送，房间id错误");
                             } else if (nickname == activity.nickname) {
-                                showToast("接收到无效的消息，昵称重复");
+                                MyLog.d(TAG, "接收到无效的消息推送，昵称为当前登录用户");
                             } else { // 收到成功的消息
                                 if (activity.cascadeLayout.getState() == CascadeLayout.OPEN) {
                                     // 显示聊天界面时，不记录未读消息数
@@ -392,17 +402,17 @@ public class RoomActivity extends AppCompatActivity {
                             int stateCode = content.getInt(0);
                             switch (stateCode) {
                                 case Protocol.EXIT_ROOM_NOT_IN: { // 用户不在任何房间
-                                    showToast("用户不在该房间，退出错误");
+                                    MyLog.d(TAG, "用户不在该房间，退出错误");
                                     break;
                                 }
                                 case Protocol.EXIT_ROOM_SUCCESS: { // 退出成功
-                                    showToast("退出房间成功");
+                                    MyLog.d(TAG, "退出房间成功");
                                     // 清空保存的房间
                                     RoomController.getInstance().setRoom(null);
                                     break;
                                 }
                                 case Protocol.EXIT_ROOM_UNKNOW_PRO: { // 未知错误
-                                    showToast("退出房间出现未知错误");
+                                    MyLog.d(TAG, "退出房间出现未知错误");
                                     break;
                                 }
                             }
@@ -416,7 +426,7 @@ public class RoomActivity extends AppCompatActivity {
                                     // 检查房间id
                                     int roomId = content.getInt(index++);
                                     if (roomId != activity.roomId) {
-                                        showToast("获取了错误房间的成员列表");
+                                        MyLog.d(TAG, "获取了错误房间的成员列表");
                                         break;
                                     }
                                     // 获取房间成员
@@ -434,11 +444,11 @@ public class RoomActivity extends AppCompatActivity {
                                     break;
                                 }
                                 case Protocol.GET_ROOM_MEMBER_UNKNOW_PRO: { // 未知错误
-                                    showToast("获取成员列表出现未知错误");
+                                    MyLog.d(TAG, "获取成员列表出现未知错误");
                                     break;
                                 }
                                 case Protocol.GET_ROOM_MEMBER_WRONG_ROOM_ID: { // 房间id错误
-                                    showToast("在错误的房间获取成员列表");
+                                    MyLog.d(TAG, "在错误的房间获取成员列表");
                                     break;
                                 }
                             }
@@ -447,16 +457,16 @@ public class RoomActivity extends AppCompatActivity {
                         case Protocol.DRAW: { // 绘制反馈
                             int stateCode = content.getInt(0);
                             switch (stateCode) {
-                                case Protocol.DRAW_SUCCESS: { // TODO 发送绘制线段成功
-//                                    showToast("发送绘制成功");
+                                case Protocol.DRAW_SUCCESS: {
+                                    MyLog.d(TAG, "发送绘制线段成功");
                                     break;
                                 }
                                 case Protocol.DRAW_UNKNOW_PRO: { // 未知错误
-                                    showToast("发生未知错误，发送绘制线段失败");
+                                    MyLog.d(TAG, "发生未知错误，发送绘制线段失败");
                                     break;
                                 }
                                 case Protocol.DRAW_WRONG_ROOM_ID: { // 房间id错误
-                                    showToast("房间id错误，发送绘制线段失败");
+                                    MyLog.d(TAG, "房间id错误，发送绘制线段失败");
                                     break;
                                 }
                             }
@@ -468,9 +478,9 @@ public class RoomActivity extends AppCompatActivity {
                             String username = content.getString(index++);
 
                             if (roomId != activity.roomId) { // 判断房间id
-                                showToast("接收到无效的绘制线段，房间id错误");
+                                MyLog.d(TAG, "接收到无效的绘制线段，房间id错误");
                             } else if (username == activity.username) {
-                                showToast("接收到无效的绘制线段，用户名重复");
+                                MyLog.d(TAG, "接收到无效的绘制线段，用户名重复");
                             } else { // 绘制线段
                                 int pointNumber = content.getInt(index++);
                                 Point points[] = new Point[pointNumber];
@@ -489,9 +499,27 @@ public class RoomActivity extends AppCompatActivity {
                             }
                             break;
                         }
+                        case Protocol.GET_DRAW_LIST: { // 同步绘制消息
+                            int stateCode = content.getInt(0);
+                            switch (stateCode) {
+                                case Protocol.GET_DRAW_LIST_SUCCESS: { // 同步绘制消息成功
+                                    MyLog.d(TAG, "正在同步绘制消息");
+                                    break;
+                                }
+                                case Protocol.GET_DRAW_LIST_WRONG_ROOM_ID: { // 房间id错误，无法同步绘制消息
+                                    MyLog.d(TAG, "房间id错误，无法同步绘制消息");
+                                    break;
+                                }
+                                case Protocol.GET_DRAW_LIST_UNKONW_PRO: { // 未知错误，无法同步绘制消息
+                                    MyLog.d(TAG, "未知错误，无法同步绘制消息");
+                                    break;
+                                }
+                            }
+                            break;
+                        }
                     }
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    MyLog.d(TAG, Log.getStackTraceString(e));
                     showToast("协议内容解析错误");
                 }
             }

@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +20,7 @@ import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.User;
 import com.app.superxlcr.mypaintboard.utils.LoadingDialogUtils;
+import com.app.superxlcr.mypaintboard.utils.MyLog;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,6 +33,8 @@ import java.lang.ref.SoftReference;
  */
 
 public class LoginActivity extends AppCompatActivity {
+
+    private static String TAG = LoginActivity.class.getSimpleName();
 
     private static MyHandler handler = new MyHandler();
 
@@ -166,7 +170,7 @@ public class LoginActivity extends AppCompatActivity {
                             }
                         }
                     } catch (JSONException e) {
-                        e.printStackTrace();
+                        MyLog.e(TAG, Log.getStackTraceString(e));
                         showToast("协议内容解析错误");
                     }
                 }

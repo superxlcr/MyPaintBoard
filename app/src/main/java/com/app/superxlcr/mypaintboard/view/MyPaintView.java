@@ -10,6 +10,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -17,6 +18,7 @@ import android.widget.Toast;
 import com.app.superxlcr.mypaintboard.controller.DrawController;
 import com.app.superxlcr.mypaintboard.model.Line;
 import com.app.superxlcr.mypaintboard.model.Point;
+import com.app.superxlcr.mypaintboard.utils.MyLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,8 @@ import java.util.List;
  */
 
 public class MyPaintView extends View {
+
+    private static final String TAG = MyPaintView.class.getSimpleName();
 
     private static final int POINT_ARRAY_SIZE = 10; // 每组发送的点数大小
     private static final int REPEAT_TIMES = 5; // 发送失败重新发送次数
@@ -64,6 +68,7 @@ public class MyPaintView extends View {
      * @param line 线段
      */
     public void drawLine(Line line) {
+        MyLog.d(TAG, "draw line!");
         Paint linePaint = new Paint(Paint.DITHER_FLAG);
         linePaint.setColor(line.getColor()); // 颜色
         linePaint.setStyle(Paint.Style.STROKE); // 实心

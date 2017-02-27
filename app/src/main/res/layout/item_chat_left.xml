@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
             android:maxEms="25"
-            android:background="@mipmap/chat_bg_right"
+            android:background="@mipmap/chat_bg_left"
             android:padding="10dp" />
 
         <ImageView

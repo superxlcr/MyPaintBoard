@@ -1,5 +1,9 @@
 package com.app.superxlcr.mypaintboard.model;
 
+import android.util.Log;
+
+import com.app.superxlcr.mypaintboard.utils.MyLog;
+
 import org.json.*;
 
 /**
@@ -9,6 +13,8 @@ import org.json.*;
  *
  */
 public class Protocol {
+
+	private static final String TAG = Protocol.class.getSimpleName();
 
 	// 服务器端口
 	public static final int PORT = 9999;
@@ -107,13 +113,12 @@ public class Protocol {
 	// 绘制消息推送
 	// push: roomId + username + line (pointNumber + point (x ,
 	// y) +
-	// color + width + isEraser + width + height)
+	// color + paintWidth + isEraser + width + height)
 	public static final int DRAW_PUSH = DRAW + 1;
 
 	// 同步绘制消息
 	// c to s: roomId
-	// s to c: stateCode + lineNumber + line (pointNumber + point (x , y) +
-	// color + width + isEraser + width + height)
+	// s to c: stateCode (if success, client will get draw_push)
 	public static final int GET_DRAW_LIST = DRAW_PUSH + 1;
 	public static final int GET_DRAW_LIST_SUCCESS = 0;
 	public static final int GET_DRAW_LIST_WRONG_ROOM_ID = GET_DRAW_LIST_SUCCESS + 1; // 错误的房间id
@@ -152,7 +157,7 @@ public class Protocol {
 			jsonObject.put(TIME, time);
 			jsonObject.put(CONTENT, content.toString());
 		} catch (JSONException e) {
-			e.printStackTrace();
+			MyLog.e(TAG, Log.getStackTraceString(e));
 		}
 		this.jsonStr = jsonObject.toString();
 	}
