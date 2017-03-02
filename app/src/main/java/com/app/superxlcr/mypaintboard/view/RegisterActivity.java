@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.app.superxlcr.mypaintboard.R;
+import com.app.superxlcr.mypaintboard.controller.CommunicationController;
 import com.app.superxlcr.mypaintboard.controller.UserController;
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.User;
@@ -31,7 +32,7 @@ import java.lang.ref.SoftReference;
  * 注册界面
  */
 
-public class RegisterActivity extends AppCompatActivity {
+public class RegisterActivity extends BaseActivity {
 
     private static String TAG = RegisterActivity.class.getSimpleName();
 
@@ -73,6 +74,9 @@ public class RegisterActivity extends AppCompatActivity {
                             // 发送时间加一，导致遗留协议失效
                             time += 1;
                             LoadingDialogUtils.closeDialog(dialog);
+                            // 断线重连，清除登录状态
+                            CommunicationController.getInstance(RegisterActivity.this).clearSocket();
+                            CommunicationController.getInstance(RegisterActivity.this).connectServer();
                         }
                     });
                     if (UserController.getInstance().register(RegisterActivity.this, handler, time, username, password, nickname)) {

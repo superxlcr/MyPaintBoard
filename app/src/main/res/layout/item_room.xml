@@ -7,26 +7,11 @@
     android:paddingRight="10dp">
 
     <TextView
-        android:id="@+id/room_id_tv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:text="@string/room_id"
-        android:textSize="16sp" />
-
-    <TextView
         android:id="@+id/room_id"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@+id/room_id_tv"
+        android:layout_alignParentLeft="true"
         android:text="@string/dummy"
-        android:textSize="16sp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_toLeftOf="@+id/room_name"
-        android:text="@string/room_name"
         android:textSize="16sp" />
 
     <TextView
@@ -38,9 +23,10 @@
         android:textSize="16sp" />
 
     <TextView
+        android:id="@+id/room_member_number_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toLeftOf="@+id/room_member_number"
+        android:layout_alignParentRight="true"
         android:text="@string/room_member_number"
         android:textSize="16sp" />
 
@@ -48,7 +34,7 @@
         android:id="@+id/room_member_number"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
+        android:layout_toLeftOf="@+id/room_member_number_tv"
         android:text="@string/dummy"
         android:textSize="16sp" />
 

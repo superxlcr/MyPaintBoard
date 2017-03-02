@@ -1,9 +1,5 @@
 package com.app.superxlcr.mypaintboard.model;
 
-import android.util.Log;
-
-import com.app.superxlcr.mypaintboard.utils.MyLog;
-
 import org.json.*;
 
 /**
@@ -13,8 +9,6 @@ import org.json.*;
  *
  */
 public class Protocol {
-
-	private static final String TAG = Protocol.class.getSimpleName();
 
 	// 服务器端口
 	public static final int PORT = 9999;
@@ -113,7 +107,7 @@ public class Protocol {
 	// 绘制消息推送
 	// push: roomId + username + line (pointNumber + point (x ,
 	// y) +
-	// color + paintWidth + isEraser + width + height)
+	// color + width + isEraser + width + height)
 	public static final int DRAW_PUSH = DRAW + 1;
 
 	// 同步绘制消息
@@ -124,10 +118,14 @@ public class Protocol {
 	public static final int GET_DRAW_LIST_WRONG_ROOM_ID = GET_DRAW_LIST_SUCCESS + 1; // 错误的房间id
 	public static final int GET_DRAW_LIST_UNKONW_PRO = GET_DRAW_LIST_WRONG_ROOM_ID + 1; // 未知错误
 
+	// 登录过期推送
+	// push:
+	public static final int LOGIN_TIME_OUT_PUSH = GET_DRAW_LIST + 1;
+	
 	// 心跳包
 	// c to s:
 	// s to c:
-	public static final int HEART_BEAT = GET_DRAW_LIST + 1;
+	public static final int HEART_BEAT = LOGIN_TIME_OUT_PUSH + 1;
 
 	// 协议：指令 + 时间戳（防重复功能） + 内容
 
@@ -157,7 +155,7 @@ public class Protocol {
 			jsonObject.put(TIME, time);
 			jsonObject.put(CONTENT, content.toString());
 		} catch (JSONException e) {
-			MyLog.e(TAG, Log.getStackTraceString(e));
+			e.printStackTrace();
 		}
 		this.jsonStr = jsonObject.toString();
 	}

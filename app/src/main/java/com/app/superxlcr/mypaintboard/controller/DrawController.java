@@ -118,37 +118,37 @@ public class DrawController {
         CommunicationController.getInstance(context).registerListener(receiveDrawListener);
     }
 
-    /**
-     * 获取绘制条目列表
-     * @param context 上下文
-     * @param handler 用于回调消息
-     * @param time 发送时间
-     * @param roomId 房间id
-     * @return 是否发送成功
-     */
-    public boolean getDrawList(final Context context, final Handler handler, long time, int roomId) {
-        JSONArray jsonArray = new JSONArray();
-        jsonArray.put(roomId);
-        Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, time, jsonArray);
-        // 注册监听器
-        getDrawListListener = new ProtocolListener() {
-            @Override
-            public boolean onReceive(Protocol protocol) {
-                int order = protocol.getOrder();
-                if (order == Protocol.GET_DRAW_LIST) {
-                    // 通过handler返回协议信息
-                    Message message = handler.obtainMessage();
-                    message.obj = protocol;
-                    handler.sendMessage(message);
-                    // 移除监听器
-                    CommunicationController.getInstance(context).removeListener(getDrawListListener);
-                    return true;
-                }
-                return false;
-            }
-        };
-        CommunicationController.getInstance(context).registerListener(getDrawListListener);
-        // 发送信息
-        return CommunicationController.getInstance(context).sendProtocol(sendProtocol);
-    }
+//    /**
+//     * 获取绘制条目列表
+//     * @param context 上下文
+//     * @param handler 用于回调消息
+//     * @param time 发送时间
+//     * @param roomId 房间id
+//     * @return 是否发送成功
+//     */
+//    public boolean getDrawList(final Context context, final Handler handler, long time, int roomId) {
+//        JSONArray jsonArray = new JSONArray();
+//        jsonArray.put(roomId);
+//        Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, time, jsonArray);
+//        // 注册监听器
+//        getDrawListListener = new ProtocolListener() {
+//            @Override
+//            public boolean onReceive(Protocol protocol) {
+//                int order = protocol.getOrder();
+//                if (order == Protocol.GET_DRAW_LIST) {
+//                    // 通过handler返回协议信息
+//                    Message message = handler.obtainMessage();
+//                    message.obj = protocol;
+//                    handler.sendMessage(message);
+//                    // 移除监听器
+//                    CommunicationController.getInstance(context).removeListener(getDrawListListener);
+//                    return true;
+//                }
+//                return false;
+//            }
+//        };
+//        CommunicationController.getInstance(context).registerListener(getDrawListListener);
+//        // 发送信息
+//        return CommunicationController.getInstance(context).sendProtocol(sendProtocol);
+//    }
 }

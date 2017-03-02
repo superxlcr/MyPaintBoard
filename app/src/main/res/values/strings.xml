@@ -13,9 +13,7 @@
     
     <string name="create_room">创建房间</string>
     <string name="update_room_list">更新房间列表</string>
-    <string name="room_id">id：</string>
-    <string name="room_name">名称：</string>
-    <string name="room_member_number">人数：</string>
+    <string name="room_member_number">人</string>
     
     <string name="edit_info">编辑信息</string>
     <string name="logout">注销用户</string>

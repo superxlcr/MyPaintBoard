@@ -3,9 +3,11 @@ package com.app.superxlcr.mypaintboard.controller;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.model.User;
+import com.app.superxlcr.mypaintboard.utils.MyLog;
 import com.app.superxlcr.mypaintboard.utils.ProtocolListener;
 
 import org.json.JSONArray;
@@ -17,6 +19,8 @@ import org.json.JSONArray;
  */
 
 public class UserController {
+
+    private static final String TAG = UserController.class.getSimpleName();
 
     public static UserController instance = null;
 
@@ -32,10 +36,12 @@ public class UserController {
     }
 
     private User user = null;
+    private String tempPassword = null;
 
     private ProtocolListener loginListener; // 登录用监听器
     private ProtocolListener registerListener; // 注册用监听器
     private ProtocolListener editInfoListener; // 编辑信息用监听器
+    private ProtocolListener loginTimeOutPushListener; // 登录过期推送监听器
 
     private UserController() {
     }
@@ -46,6 +52,32 @@ public class UserController {
 
     public User getUser() {
         return user;
+    }
+
+    /**
+     * 设置
+     * @param context 上下文
+     * @param handler 用于回调消息
+     */
+    public void setLoginTimeOutPushHandler(Context context, final Handler handler) {
+        // 连接服务器
+        CommunicationController.getInstance(context).connectServer();
+        // 注册监听器
+        loginTimeOutPushListener = new ProtocolListener() {
+            @Override
+            public boolean onReceive(Protocol protocol) {
+                int order = protocol.getOrder();
+                if (order == Protocol.LOGIN_TIME_OUT_PUSH) {
+                    // 通过handler返回协议信息
+                    Message message = handler.obtainMessage();
+                    message.obj = protocol;
+                    handler.sendMessage(message);
+                    return true;
+                }
+                return false;
+            }
+        };
+        CommunicationController.getInstance(context).registerListener(loginTimeOutPushListener);
     }
 
     /**
@@ -61,6 +93,8 @@ public class UserController {
         JSONArray jsonArray = new JSONArray();
         jsonArray.put(username);
         jsonArray.put(password);
+        // 用于自动重新登录
+        tempPassword = password;
         Protocol sendProtocol = new Protocol(Protocol.LOGIN, time, jsonArray);
         // 注册监听器
         loginListener = new ProtocolListener() {
@@ -98,6 +132,8 @@ public class UserController {
         JSONArray jsonArray = new JSONArray();
         jsonArray.put(username);
         jsonArray.put(password);
+        // 用于自动重新登录
+        tempPassword = password;
         jsonArray.put(nickname);
         Protocol sendProtocol = new Protocol(Protocol.REGISTER, time, jsonArray);
         // 注册监听器

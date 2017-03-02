@@ -31,7 +31,7 @@ import java.lang.ref.SoftReference;
  * 编辑用户信息界面
  */
 
-public class EditInfoActivity extends AppCompatActivity {
+public class EditInfoActivity extends BaseActivity {
 
     private static final String TAG = EditInfoActivity.class.getSimpleName();
 

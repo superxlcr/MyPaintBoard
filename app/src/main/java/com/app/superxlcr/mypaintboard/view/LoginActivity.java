@@ -32,7 +32,7 @@ import java.lang.ref.SoftReference;
  * 登录界面
  */
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends BaseActivity {
 
     private static String TAG = LoginActivity.class.getSimpleName();
 
@@ -55,6 +55,10 @@ public class LoginActivity extends AppCompatActivity {
         CommunicationController.getInstance(this).connectServer();
 
         handler.setReference(new SoftReference<LoginActivity>(this));
+
+        // 设置登录过期处理器
+        UserController.getInstance().setLoginTimeOutPushHandler(this, handler);
+
         accountEt = (EditText) findViewById(R.id.account);
         passwordEt = (EditText) findViewById(R.id.password);
         loginBtn = (Button) findViewById(R.id.login);
@@ -75,6 +79,9 @@ public class LoginActivity extends AppCompatActivity {
                             // 发送时间加一，导致遗留协议失效
                             time += 1;
                             LoadingDialogUtils.closeDialog(dialog);
+                            // 断线重连，清除登录状态
+                            CommunicationController.getInstance(LoginActivity.this).clearSocket();
+                            CommunicationController.getInstance(LoginActivity.this).connectServer();
                         }
                     });
                     if (!UserController.getInstance().login(LoginActivity.this, handler, time, username, password)) {
@@ -172,6 +179,15 @@ public class LoginActivity extends AppCompatActivity {
                     } catch (JSONException e) {
                         MyLog.e(TAG, Log.getStackTraceString(e));
                         showToast("协议内容解析错误");
+                    }
+                } else if (protocol.getOrder() == Protocol.LOGIN_TIME_OUT_PUSH) {
+                    // 登录过期时，关闭所有界面，重新打开登录界面
+                    MyLog.d(TAG, "login_time_out!");
+                    if (activity.isFinishing()) {
+                        BaseActivity.removeAllActivity();
+                        Intent intent = new Intent(activity, LoginActivity.class);
+                        activity.startActivity(intent);
+                        showToast("由于网络异常，您已下线，请重新登录");
                     }
                 }
             }

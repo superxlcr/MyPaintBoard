@@ -152,6 +152,14 @@ public class CommunicationController {
                 }
             }
         }).start();
+
+        // 等待服务器连接上
+        try {
+            Thread.yield();
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            MyLog.e(TAG, Log.getStackTraceString(e));
+        }
     }
 
     /**
@@ -167,7 +175,12 @@ public class CommunicationController {
             }
             socket = null;
         }
-        // TODO 重置登录状态
+        // 重置状态
+        // 清空用户状态
+        UserController.getInstance().setUser(null);
+        // 清空房间状态
+        RoomController.getInstance().setRoom(null);
+        RoomController.getInstance().setList(null);
     }
 
     /**

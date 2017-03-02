@@ -46,7 +46,7 @@ import java.util.List;
  * 房间列表主界面
  */
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
     private static String TAG = MainActivity.class.getSimpleName();
 
@@ -168,6 +168,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        // 断线，清除登录状态
+        CommunicationController.getInstance(this).clearSocket();
+        super.onBackPressed();
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main_activity, menu);
@@ -204,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
     // 获取房间列表
     private void updateRoomList() {
         time = System.currentTimeMillis();
-        dialog = LoadingDialogUtils.showDialog(this, "正在获取房间列表...", true);
+        dialog = LoadingDialogUtils.showDialog(this, "更新列表中...", true);
         dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialogInterface) {

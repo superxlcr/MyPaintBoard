@@ -45,7 +45,7 @@ import java.util.List;
  * 房间界面
  */
 
-public class RoomActivity extends AppCompatActivity {
+public class RoomActivity extends BaseActivity {
 
     private static String TAG = RoomActivity.class.getSimpleName();
 
@@ -105,8 +105,8 @@ public class RoomActivity extends AppCompatActivity {
         // 设置监听器
         DrawController.getInstance().setReceiveDrawHandler(this, handler);
 
-        // 获取旧线段
-        DrawController.getInstance().getDrawList(this, handler, System.currentTimeMillis(), roomId);
+//        // 获取旧线段
+//        DrawController.getInstance().getDrawList(this, handler, System.currentTimeMillis(), roomId);
 
         // 层叠view
         cascadeLayout = (CascadeLayout) findViewById(R.id.cascade_layout);
@@ -499,24 +499,24 @@ public class RoomActivity extends AppCompatActivity {
                             }
                             break;
                         }
-                        case Protocol.GET_DRAW_LIST: { // 同步绘制消息
-                            int stateCode = content.getInt(0);
-                            switch (stateCode) {
-                                case Protocol.GET_DRAW_LIST_SUCCESS: { // 同步绘制消息成功
-                                    MyLog.d(TAG, "正在同步绘制消息");
-                                    break;
-                                }
-                                case Protocol.GET_DRAW_LIST_WRONG_ROOM_ID: { // 房间id错误，无法同步绘制消息
-                                    MyLog.d(TAG, "房间id错误，无法同步绘制消息");
-                                    break;
-                                }
-                                case Protocol.GET_DRAW_LIST_UNKONW_PRO: { // 未知错误，无法同步绘制消息
-                                    MyLog.d(TAG, "未知错误，无法同步绘制消息");
-                                    break;
-                                }
-                            }
-                            break;
-                        }
+//                        case Protocol.GET_DRAW_LIST: { // 同步绘制消息
+//                            int stateCode = content.getInt(0);
+//                            switch (stateCode) {
+//                                case Protocol.GET_DRAW_LIST_SUCCESS: { // 同步绘制消息成功
+//                                    MyLog.d(TAG, "正在同步绘制消息");
+//                                    break;
+//                                }
+//                                case Protocol.GET_DRAW_LIST_WRONG_ROOM_ID: { // 房间id错误，无法同步绘制消息
+//                                    MyLog.d(TAG, "房间id错误，无法同步绘制消息");
+//                                    break;
+//                                }
+//                                case Protocol.GET_DRAW_LIST_UNKONW_PRO: { // 未知错误，无法同步绘制消息
+//                                    MyLog.d(TAG, "未知错误，无法同步绘制消息");
+//                                    break;
+//                                }
+//                            }
+//                            break;
+//                        }
                     }
                 } catch (JSONException e) {
                     MyLog.d(TAG, Log.getStackTraceString(e));
