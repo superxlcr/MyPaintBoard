@@ -126,6 +126,20 @@ public class Protocol {
 	// c to s:
 	// s to c:
 	public static final int HEART_BEAT = LOGIN_TIME_OUT_PUSH + 1;
+	
+	// 图片上传
+	// c to s: ask
+	// s to c: respondCode
+	// c to s (2): stateCode + len + file
+	public static final int UPLOAD_PIC = HEART_BEAT + 1;
+	// ask
+	public static final int UPLOAD_PIC_ASK = 0; // 请求传输
+	// respondCode
+	public static final int UPLOAD_PIC_OK = UPLOAD_PIC_ASK + 1; // 允许传输
+	public static final int UPLOAD_PIC_FAIL = UPLOAD_PIC_OK + 1; // 禁止传输
+	// stateCode + len + file
+	public static final int UPLOAD_PIC_CONTINUE = UPLOAD_PIC_FAIL + 1; // 继续传输
+	public static final int UPLOAD_PIC_FINISH = UPLOAD_PIC_CONTINUE + 1; // 完成传输
 
 	// 协议：指令 + 时间戳（防重复功能） + 内容
 
@@ -247,6 +261,9 @@ public class Protocol {
 			break;
 		case HEART_BEAT:
 			orderStr = "HEART_BEAT";
+			break;
+		case UPLOAD_PIC:
+			orderStr = "UPLOAD_PIC";
 			break;
 		default:
 			break;

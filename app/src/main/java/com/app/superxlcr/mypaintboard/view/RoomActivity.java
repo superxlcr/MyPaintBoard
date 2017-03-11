@@ -2,11 +2,17 @@ package com.app.superxlcr.mypaintboard.view;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -31,13 +37,18 @@ import com.app.superxlcr.mypaintboard.model.Line;
 import com.app.superxlcr.mypaintboard.model.Point;
 import com.app.superxlcr.mypaintboard.model.Protocol;
 import com.app.superxlcr.mypaintboard.utils.MyLog;
+import com.app.superxlcr.mypaintboard.utils.UploadFileUtil;
 import com.readystatesoftware.viewbadger.BadgeView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -61,6 +72,7 @@ public class RoomActivity extends BaseActivity {
     // 层叠view
     private CascadeLayout cascadeLayout;
     private TextView triggerView;
+    private TextView uploadPicView;
 
     // 成员相关
     private ListView memberListView;
@@ -72,6 +84,14 @@ public class RoomActivity extends BaseActivity {
     private MyChatView myChatView;
     private int newMessageNumber; // 新消息条目数
     private int oldPosition; // 旧消息位置
+
+    // 上传图片相关
+    private static final int TAKE_PHOTO = 0;
+    private static final int FROM_LOCAL = 1;
+    private static final int CROP_PHOTO = 2;
+
+    private final String photoTempName = "tempPhoto";
+    private Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,7 +126,7 @@ public class RoomActivity extends BaseActivity {
         DrawController.getInstance().setReceiveDrawHandler(this, handler);
 
 //        // 获取旧线段
-//        DrawController.getInstance().getDrawList(this, handler, System.currentTimeMillis(), roomId);
+        DrawController.getInstance().getDrawList(this, handler, System.currentTimeMillis(), roomId);
 
         // 层叠view
         cascadeLayout = (CascadeLayout) findViewById(R.id.cascade_layout);
@@ -126,6 +146,15 @@ public class RoomActivity extends BaseActivity {
                 badgeView.hide();
             }
         });
+
+        // 上传图片view
+//        uploadPicView = (TextView) findViewById(R.id.upload_pic);
+//        uploadPicView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                selectUploadPic();
+//            }
+//        });
 
         // 成员列表view
         memberListView = (ListView) findViewById(R.id.member_list);
@@ -227,8 +256,99 @@ public class RoomActivity extends BaseActivity {
             case R.id.eraser: // 擦除模式
                 myPaintView.setEraser(true);
                 break;
+            case R.id.upload_pic: // 上传图片
+                // 请求传输图片
+                DrawController.getInstance().askUploadPic(this, handler);
+                break;
         }
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            switch (requestCode) {
+                case TAKE_PHOTO: { // 拍照
+                    if (imageUri != null) {
+                        cropPhoto(imageUri);
+                    } else {
+                        MyLog.e(TAG, "take_photo null!");
+                    }
+                    break;
+                }
+                case FROM_LOCAL: { // 从相册中选择
+                    if (data != null && data.getData() != null) {
+                        cropPhoto(data.getData());
+                    } else {
+                        MyLog.e(TAG, "from_local null!");
+                    }
+                    break;
+                }
+                case CROP_PHOTO: {
+                    UploadFileUtil.uploadPic(this, imageUri);
+                    break;
+                }
+                default:
+                    break;
+            }
+        } else {
+            Toast.makeText(this, "获取图片失败，请重新尝试！", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // 选择上传图片
+    private void selectUploadPic() {
+        String[] items = new String[]{"拍照", "从相册中选择"};
+        new AlertDialog.Builder(this).setTitle("请选择上传图片").setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0: { // 拍照
+                        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+                        File outputImage = new File(path, photoTempName + ".jpg");
+                        try {
+                            if (outputImage.exists()) {
+                                outputImage.delete();
+                            }
+                            outputImage.createNewFile();
+                        } catch (IOException e) {
+                            MyLog.e(TAG, Log.getStackTraceString(e));
+                        }
+                        imageUri = Uri.fromFile(outputImage);
+                        Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+                        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+                        startActivityForResult(intent, TAKE_PHOTO);
+                        break;
+                    }
+                    case 1: { // 从相册中选择
+                        Intent intent = new Intent();
+                        intent.setType("image/*");
+                        intent.setAction(Intent.ACTION_GET_CONTENT);
+                        startActivityForResult(intent, FROM_LOCAL);
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+        }).create().show();
+    }
+
+    private void cropPhoto(Uri uri) {
+        Intent intent = new Intent("com.android.camera.action.CROP");
+        intent.setDataAndType(uri, "image/*");
+        // TODO 裁剪参数
+        intent.putExtra("scale", true);
+        // 裁剪比例
+        intent.putExtra("aspectX", 1);
+        intent.putExtra("aspectY", 1);
+        // 裁剪宽高
+        intent.putExtra("outputX", 320);
+        intent.putExtra("outputY", 320);
+
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        startActivityForResult(intent, CROP_PHOTO);
     }
 
     static class Member {
@@ -499,24 +619,40 @@ public class RoomActivity extends BaseActivity {
                             }
                             break;
                         }
-//                        case Protocol.GET_DRAW_LIST: { // 同步绘制消息
-//                            int stateCode = content.getInt(0);
-//                            switch (stateCode) {
-//                                case Protocol.GET_DRAW_LIST_SUCCESS: { // 同步绘制消息成功
-//                                    MyLog.d(TAG, "正在同步绘制消息");
-//                                    break;
-//                                }
-//                                case Protocol.GET_DRAW_LIST_WRONG_ROOM_ID: { // 房间id错误，无法同步绘制消息
-//                                    MyLog.d(TAG, "房间id错误，无法同步绘制消息");
-//                                    break;
-//                                }
-//                                case Protocol.GET_DRAW_LIST_UNKONW_PRO: { // 未知错误，无法同步绘制消息
-//                                    MyLog.d(TAG, "未知错误，无法同步绘制消息");
-//                                    break;
-//                                }
-//                            }
-//                            break;
-//                        }
+                        case Protocol.GET_DRAW_LIST: { // 同步绘制消息
+                            int stateCode = content.getInt(0);
+                            switch (stateCode) {
+                                case Protocol.GET_DRAW_LIST_SUCCESS: { // 同步绘制消息成功
+                                    showToast("正在同步绘制消息");
+                                    MyLog.d(TAG, "正在同步绘制消息");
+                                    break;
+                                }
+                                case Protocol.GET_DRAW_LIST_WRONG_ROOM_ID: { // 房间id错误，无法同步绘制消息
+                                    MyLog.d(TAG, "房间id错误，无法同步绘制消息");
+                                    break;
+                                }
+                                case Protocol.GET_DRAW_LIST_UNKONW_PRO: { // 未知错误，无法同步绘制消息
+                                    MyLog.d(TAG, "未知错误，无法同步绘制消息");
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case Protocol.UPLOAD_PIC: {
+                            int respondCode = content.getInt(0);
+                            switch (respondCode) {
+                                case Protocol.UPLOAD_PIC_OK: { // 可以上传图片
+                                    // 打开选择图片，裁剪界面
+                                    activity.selectUploadPic();
+                                    break;
+                                }
+                                case Protocol.UPLOAD_PIC_FAIL: { // 禁止上传图片
+                                    showToast("服务器禁止传输图片");
+                                    MyLog.d(TAG, "服务器禁止传输图片");
+                                    break;
+                                }
+                            }
+                        }
                     }
                 } catch (JSONException e) {
                     MyLog.d(TAG, Log.getStackTraceString(e));

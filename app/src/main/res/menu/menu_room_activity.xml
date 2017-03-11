@@ -68,4 +68,7 @@
             </group>
         </menu>
     </item>
+    <item
+        android:id="@+id/upload_pic"
+        android:title="@string/upload_pic" />
 </menu>

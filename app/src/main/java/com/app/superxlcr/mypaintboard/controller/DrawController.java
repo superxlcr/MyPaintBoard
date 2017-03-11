@@ -35,6 +35,7 @@ public class DrawController {
     private ProtocolListener sendDrawListener; // 发送绘制条目用监听器
     private ProtocolListener receiveDrawListener; // 接收绘制条目用监听器
     private ProtocolListener getDrawListListener; // 获取绘制条目用监听器
+    private ProtocolListener uploadPicListener; // 上传图片用监听器
 
     private DrawController() {
         sendDrawListener = null;
@@ -118,37 +119,69 @@ public class DrawController {
         CommunicationController.getInstance(context).registerListener(receiveDrawListener);
     }
 
-//    /**
-//     * 获取绘制条目列表
-//     * @param context 上下文
-//     * @param handler 用于回调消息
-//     * @param time 发送时间
-//     * @param roomId 房间id
-//     * @return 是否发送成功
-//     */
-//    public boolean getDrawList(final Context context, final Handler handler, long time, int roomId) {
-//        JSONArray jsonArray = new JSONArray();
-//        jsonArray.put(roomId);
-//        Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, time, jsonArray);
-//        // 注册监听器
-//        getDrawListListener = new ProtocolListener() {
-//            @Override
-//            public boolean onReceive(Protocol protocol) {
-//                int order = protocol.getOrder();
-//                if (order == Protocol.GET_DRAW_LIST) {
-//                    // 通过handler返回协议信息
-//                    Message message = handler.obtainMessage();
-//                    message.obj = protocol;
-//                    handler.sendMessage(message);
-//                    // 移除监听器
-//                    CommunicationController.getInstance(context).removeListener(getDrawListListener);
-//                    return true;
-//                }
-//                return false;
-//            }
-//        };
-//        CommunicationController.getInstance(context).registerListener(getDrawListListener);
-//        // 发送信息
-//        return CommunicationController.getInstance(context).sendProtocol(sendProtocol);
-//    }
+    /**
+     * 获取绘制条目列表
+     * @param context 上下文
+     * @param handler 用于回调消息
+     * @param time 发送时间
+     * @param roomId 房间id
+     * @return 是否发送成功
+     */
+    public boolean getDrawList(final Context context, final Handler handler, long time, int roomId) {
+        JSONArray jsonArray = new JSONArray();
+        jsonArray.put(roomId);
+        Protocol sendProtocol = new Protocol(Protocol.GET_DRAW_LIST, time, jsonArray);
+        // 注册监听器
+        getDrawListListener = new ProtocolListener() {
+            @Override
+            public boolean onReceive(Protocol protocol) {
+                int order = protocol.getOrder();
+                if (order == Protocol.GET_DRAW_LIST) {
+                    // 通过handler返回协议信息
+                    Message message = handler.obtainMessage();
+                    message.obj = protocol;
+                    handler.sendMessage(message);
+                    // 移除监听器
+                    CommunicationController.getInstance(context).removeListener(getDrawListListener);
+                    return true;
+                }
+                return false;
+            }
+        };
+        CommunicationController.getInstance(context).registerListener(getDrawListListener);
+        // 发送信息
+        return CommunicationController.getInstance(context).sendProtocol(sendProtocol);
+    }
+
+    /**
+     * 请求传输图片
+     * @param context 上下文
+     * @param handler 用于回调消息
+     * @return 是否发送成功
+     */
+    public boolean askUploadPic(final Context context, final Handler handler) {
+        JSONArray jsonArray = new JSONArray();
+        jsonArray.put(Protocol.UPLOAD_PIC_ASK);
+        Protocol sendProtocol = new Protocol(Protocol.UPLOAD_PIC, System.currentTimeMillis(), jsonArray);
+        // 注册监听器
+        uploadPicListener = new ProtocolListener() {
+            @Override
+            public boolean onReceive(Protocol protocol) {
+                int order = protocol.getOrder();
+                if (order == Protocol.UPLOAD_PIC) {
+                    // 通过handler返回协议信息
+                    Message message = handler.obtainMessage();
+                    message.obj = protocol;
+                    handler.sendMessage(message);
+                    // 移除监听器
+                    CommunicationController.getInstance(context).removeListener(uploadPicListener);
+                    return true;
+                }
+                return false;
+            }
+        };
+        CommunicationController.getInstance(context).registerListener(uploadPicListener);
+        // 发送信息
+        return CommunicationController.getInstance(context).sendProtocol(sendProtocol);
+    }
 }

@@ -3,7 +3,6 @@ package com.app.superxlcr.mypaintboard.controller;
 import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
-import android.net.wifi.WifiConfiguration;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -19,8 +18,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
 import java.net.Socket;
 import java.util.List;
 import java.util.Timer;
@@ -36,7 +33,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class CommunicationController {
 
     // 服务器IP
-    public static String SERVER_IP = "172.20.10.4";
+//    public static String SERVER_IP = "172.20.10.4";
+    public static String SERVER_IP = "192.168.191.1";
 
     private static String TAG = CommunicationController.class.getSimpleName();
 
@@ -97,10 +95,11 @@ public class CommunicationController {
                             try {
                                 if (socket != null) {
                                     // 发送心跳信息
-                                    Writer writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
+                                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
                                     JSONArray jsonArray = new JSONArray();
                                     Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(), jsonArray);
                                     writer.write(sendProtocol.getJsonStr());
+                                    writer.newLine();
                                     writer.flush();
                                 } else {
                                     // 连接中断终止任务
@@ -118,17 +117,17 @@ public class CommunicationController {
 
                     // 开始监听信息
                     try {
-                        Reader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
                         while (socket != null) {
-                            char data[] = new char[99999];
-                            int len;
-                            while ((len = reader.read(data)) != -1) {
-                                String jsonString = new String(data, 0, len);
+                            String jsonString = null;
+                            while ((jsonString = reader.readLine()) != null) {
                                 try {
                                     Protocol protocol = new Protocol(jsonString);
+                                    if (jsonString.length() != 48) // 48 ： means heart beat
+                                        MyLog.d(TAG, "len :" + jsonString.length() + "\n" + jsonString + "\n" + Thread.currentThread());
                                     // 打印非心跳包的信息
                                     if (protocol.getOrder() != Protocol.HEART_BEAT) {
-                                        MyLog.d(TAG, "len :" + len + "\n" + protocol.toString());
+                                        MyLog.d(TAG, "len :" + jsonString.length() + "\n" + protocol.toString());
                                     }
                                     // 分发处理协议内容
                                     for (ProtocolListener listener : listenerList) {
@@ -220,8 +219,9 @@ public class CommunicationController {
             return false;
         }
         try {
-            Writer writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
             writer.write(protocol.getJsonStr());
+            writer.newLine();
             writer.flush();
             return true;
         } catch (IOException e) {
