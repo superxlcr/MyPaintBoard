@@ -121,16 +121,16 @@ public class Protocol {
 	// 登录过期推送
 	// push:
 	public static final int LOGIN_TIME_OUT_PUSH = GET_DRAW_LIST + 1;
-	
+
 	// 心跳包
 	// c to s:
 	// s to c:
 	public static final int HEART_BEAT = LOGIN_TIME_OUT_PUSH + 1;
-	
+
 	// 图片上传
 	// c to s: ask
 	// s to c: respondCode
-	// c to s (2): stateCode + len + file
+	// c to s (2): stateCode + ( len + file )(if continue)
 	public static final int UPLOAD_PIC = HEART_BEAT + 1;
 	// ask
 	public static final int UPLOAD_PIC_ASK = 0; // 请求传输
@@ -140,6 +140,20 @@ public class Protocol {
 	// stateCode + len + file
 	public static final int UPLOAD_PIC_CONTINUE = UPLOAD_PIC_FAIL + 1; // 继续传输
 	public static final int UPLOAD_PIC_FINISH = UPLOAD_PIC_CONTINUE + 1; // 完成传输
+
+	// 背景图片推送
+	// push: ask
+	// c to s: respondCode
+	// push (2): stateCode + ( len + file )(if continue)
+	public static final int BG_PIC_PUSH = UPLOAD_PIC + 1;
+	// ask
+	public static final int BG_PIC_PUSH_ASK = 0; // 请求传输
+	// respondCode
+	public static final int BG_PIC_PUSH_OK = BG_PIC_PUSH_ASK + 1; // 允许传输
+	public static final int BG_PIC_PUSH_FAIL = BG_PIC_PUSH_OK + 1; // 禁止传输
+	// stateCode + len + file
+	public static final int BG_PIC_PUSH_CONTINUE = BG_PIC_PUSH_FAIL + 1; // 继续传输
+	public static final int BG_PIC_PUSH_FINISH = BG_PIC_PUSH_CONTINUE + 1; // 完成传输
 
 	// 协议：指令 + 时间戳（防重复功能） + 内容
 
@@ -264,6 +278,9 @@ public class Protocol {
 			break;
 		case UPLOAD_PIC:
 			orderStr = "UPLOAD_PIC";
+			break;
+		case BG_PIC_PUSH:
+			orderStr = "BG_PIC_PUSH";
 			break;
 		default:
 			break;

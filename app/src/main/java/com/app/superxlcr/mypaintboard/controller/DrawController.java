@@ -36,6 +36,7 @@ public class DrawController {
     private ProtocolListener receiveDrawListener; // 接收绘制条目用监听器
     private ProtocolListener getDrawListListener; // 获取绘制条目用监听器
     private ProtocolListener uploadPicListener; // 上传图片用监听器
+    private ProtocolListener receiveBgPicListener; // 接收背景图片推送监听器
 
     private DrawController() {
         sendDrawListener = null;
@@ -183,5 +184,31 @@ public class DrawController {
         CommunicationController.getInstance(context).registerListener(uploadPicListener);
         // 发送信息
         return CommunicationController.getInstance(context).sendProtocol(sendProtocol);
+    }
+
+    /**
+     * 设置接收背景图片推送监听器
+     * @param context 上下文
+     * @param handler 用于回调消息处理器
+     */
+    public void setReceiveBgPicHandler(Context context, final Handler handler) {
+        // 连接服务器
+        CommunicationController.getInstance(context).connectServer();
+        // 注册监听器
+        receiveBgPicListener = new ProtocolListener() {
+            @Override
+            public boolean onReceive(Protocol protocol) {
+                int order = protocol.getOrder();
+                if (order == Protocol.BG_PIC_PUSH) {
+                    // 通过handler返回协议信息
+                    Message message = handler.obtainMessage();
+                    message.obj = protocol;
+                    handler.sendMessage(message);
+                    return true;
+                }
+                return false;
+            }
+        };
+        CommunicationController.getInstance(context).registerListener(receiveBgPicListener);
     }
 }

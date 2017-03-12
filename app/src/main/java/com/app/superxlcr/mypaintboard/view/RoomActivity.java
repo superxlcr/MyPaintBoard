@@ -1,10 +1,14 @@
 package com.app.superxlcr.mypaintboard.view;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -28,6 +32,7 @@ import android.widget.Toast;
 
 import com.app.superxlcr.mypaintboard.R;
 import com.app.superxlcr.mypaintboard.controller.ChatController;
+import com.app.superxlcr.mypaintboard.controller.CommunicationController;
 import com.app.superxlcr.mypaintboard.controller.DrawController;
 import com.app.superxlcr.mypaintboard.controller.MemberController;
 import com.app.superxlcr.mypaintboard.controller.RoomController;
@@ -36,6 +41,9 @@ import com.app.superxlcr.mypaintboard.model.ChatMessage;
 import com.app.superxlcr.mypaintboard.model.Line;
 import com.app.superxlcr.mypaintboard.model.Point;
 import com.app.superxlcr.mypaintboard.model.Protocol;
+import com.app.superxlcr.mypaintboard.model.Room;
+import com.app.superxlcr.mypaintboard.model.User;
+import com.app.superxlcr.mypaintboard.utils.LoadingDialogUtils;
 import com.app.superxlcr.mypaintboard.utils.MyLog;
 import com.app.superxlcr.mypaintboard.utils.UploadFileUtil;
 import com.readystatesoftware.viewbadger.BadgeView;
@@ -44,8 +52,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.SoftReference;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -62,9 +76,9 @@ public class RoomActivity extends BaseActivity {
 
     private static MyHandler handler = new MyHandler();
 
-    private int roomId;
-    private String username;
-    private String nickname;
+    private User user;
+    private Room room;
+    private boolean isAdmin;
 
     // 绘制view
     private MyPaintView myPaintView;
@@ -72,7 +86,9 @@ public class RoomActivity extends BaseActivity {
     // 层叠view
     private CascadeLayout cascadeLayout;
     private TextView triggerView;
-    private TextView uploadPicView;
+
+    // 上传图片选项
+    private MenuItem uploadPicItem;
 
     // 成员相关
     private ListView memberListView;
@@ -93,6 +109,10 @@ public class RoomActivity extends BaseActivity {
     private final String photoTempName = "tempPhoto";
     private Uri imageUri;
 
+    // 接收背景图片用
+    private FileOutputStream fos;
+    private Dialog receiveBgPicDialog;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,7 +125,7 @@ public class RoomActivity extends BaseActivity {
             Toast.makeText(this, "您还未进入任何房间", Toast.LENGTH_SHORT).show();
             finish();
         }
-        roomId = RoomController.getInstance().getRoom().getId();
+        room = RoomController.getInstance().getRoom();
 
         // 初始化用户名昵称
         if (UserController.getInstance().getUser() == null) {
@@ -113,20 +133,36 @@ public class RoomActivity extends BaseActivity {
             Toast.makeText(this, "您还未进行登录", Toast.LENGTH_SHORT).show();
             finish();
         }
-        username = UserController.getInstance().getUser().getUsername();
-        nickname = UserController.getInstance().getUser().getNickname();
+        user = UserController.getInstance().getUser();
+
+        // 是否房间管理员初始化为false
+        isAdmin = false;
+
+        // 初始化相片存储地址
+        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        File outputImage = new File(path, photoTempName + ".jpg");
+        try {
+            if (outputImage.exists()) {
+                outputImage.delete();
+            }
+            outputImage.createNewFile();
+        } catch (IOException e) {
+            MyLog.e(TAG, Log.getStackTraceString(e));
+        }
+        imageUri = Uri.fromFile(outputImage);
 
         // TODO 语音系统
 
         // 绘制view
         myPaintView = (MyPaintView) findViewById(R.id.my_paint_view);
         myPaintView.setHandler(handler);
-        myPaintView.setRoomId(roomId);
+        myPaintView.setRoomId(room.getId());
         // 设置监听器
         DrawController.getInstance().setReceiveDrawHandler(this, handler);
+        DrawController.getInstance().setReceiveBgPicHandler(this, handler);
 
 //        // 获取旧线段
-        DrawController.getInstance().getDrawList(this, handler, System.currentTimeMillis(), roomId);
+        DrawController.getInstance().getDrawList(this, handler, System.currentTimeMillis(), room.getId());
 
         // 层叠view
         cascadeLayout = (CascadeLayout) findViewById(R.id.cascade_layout);
@@ -147,15 +183,6 @@ public class RoomActivity extends BaseActivity {
             }
         });
 
-        // 上传图片view
-//        uploadPicView = (TextView) findViewById(R.id.upload_pic);
-//        uploadPicView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                selectUploadPic();
-//            }
-//        });
-
         // 成员列表view
         memberListView = (ListView) findViewById(R.id.member_list);
         memberList = new ArrayList<>();
@@ -164,7 +191,7 @@ public class RoomActivity extends BaseActivity {
 
         // 初始化成员模块，获取房间成员信息
         MemberController.getInstance().setReceiveHandler(this, handler);
-        MemberController.getInstance().getRoomMember(this, roomId, System.currentTimeMillis());
+        MemberController.getInstance().getRoomMember(this, room.getId(), System.currentTimeMillis());
 
         // 聊天view
         oldPosition = 0;
@@ -176,9 +203,9 @@ public class RoomActivity extends BaseActivity {
                 if (!myChatView.getInputET().getText().toString().isEmpty()) {
                     long time = System.currentTimeMillis();
                     String msg = myChatView.getInputET().getText().toString();
-                    if (ChatController.getInstance().sendMessage(RoomActivity.this, handler, time, roomId, msg)) {
+                    if (ChatController.getInstance().sendMessage(RoomActivity.this, handler, time, room.getId(), msg)) {
                         // 正在发送
-                        ChatMessage chatMessage = new ChatMessage(nickname, msg, ChatMessage.SEND, time, true);
+                        ChatMessage chatMessage = new ChatMessage(user.getNickname(), msg, ChatMessage.SEND, time, true);
                         myChatView.getMyChatMessageList().add(chatMessage);
                         myChatView.getAdapter().notifyDataSetChanged();
                         // 清空输入框
@@ -203,6 +230,14 @@ public class RoomActivity extends BaseActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_room_activity, menu);
+        // 一般情况下隐藏这个选项
+        uploadPicItem = menu.findItem(R.id.upload_pic);
+        if (!isAdmin) {
+            uploadPicItem.setVisible(false);
+        } else {
+            uploadPicItem.setVisible(true);
+        }
+
         return true;
     }
 
@@ -286,7 +321,16 @@ public class RoomActivity extends BaseActivity {
                     break;
                 }
                 case CROP_PHOTO: {
+                    // 开始上传图片
                     UploadFileUtil.uploadPic(this, imageUri);
+                    // 设置图片背景
+                    try {
+                        InputStream is = getContentResolver().openInputStream(imageUri);
+                        Bitmap imageBitmap = BitmapFactory.decodeStream(is);
+                        myPaintView.setBackground(new BitmapDrawable(imageBitmap));
+                    } catch (FileNotFoundException e) {
+                        MyLog.e(TAG, Log.getStackTraceString(e));
+                    }
                     break;
                 }
                 default:
@@ -305,17 +349,6 @@ public class RoomActivity extends BaseActivity {
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0: { // 拍照
-                        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-                        File outputImage = new File(path, photoTempName + ".jpg");
-                        try {
-                            if (outputImage.exists()) {
-                                outputImage.delete();
-                            }
-                            outputImage.createNewFile();
-                        } catch (IOException e) {
-                            MyLog.e(TAG, Log.getStackTraceString(e));
-                        }
-                        imageUri = Uri.fromFile(outputImage);
                         Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
                         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
                         startActivityForResult(intent, TAKE_PHOTO);
@@ -338,15 +371,15 @@ public class RoomActivity extends BaseActivity {
     private void cropPhoto(Uri uri) {
         Intent intent = new Intent("com.android.camera.action.CROP");
         intent.setDataAndType(uri, "image/*");
-        // TODO 裁剪参数
+        // 保持裁剪比例
         intent.putExtra("scale", true);
         // 裁剪比例
-        intent.putExtra("aspectX", 1);
-        intent.putExtra("aspectY", 1);
+        intent.putExtra("aspectX", myPaintView.getWidth());
+        intent.putExtra("aspectY", myPaintView.getHeight());
         // 裁剪宽高
-        intent.putExtra("outputX", 320);
-        intent.putExtra("outputY", 320);
-
+        intent.putExtra("outputX", myPaintView.getWidth());
+        intent.putExtra("outputY", myPaintView.getHeight());
+        // 文件输出位置
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
         startActivityForResult(intent, CROP_PHOTO);
     }
@@ -491,9 +524,9 @@ public class RoomActivity extends BaseActivity {
                             String message = content.getString(2);
 
                             // 判断消息是否有效
-                            if (roomId != activity.roomId) {
+                            if (roomId != activity.room.getId()) {
                                 MyLog.d(TAG, "接收到无效的消息推送，房间id错误");
-                            } else if (nickname == activity.nickname) {
+                            } else if (nickname == activity.user.getNickname()) {
                                 MyLog.d(TAG, "接收到无效的消息推送，昵称为当前登录用户");
                             } else { // 收到成功的消息
                                 if (activity.cascadeLayout.getState() == CascadeLayout.OPEN) {
@@ -545,18 +578,27 @@ public class RoomActivity extends BaseActivity {
                                 case Protocol.GET_ROOM_MEMBER_SUCCESS: { // 获取成员列表成功
                                     // 检查房间id
                                     int roomId = content.getInt(index++);
-                                    if (roomId != activity.roomId) {
+                                    if (roomId != activity.room.getId()) {
                                         MyLog.d(TAG, "获取了错误房间的成员列表");
                                         break;
                                     }
                                     // 获取房间成员
                                     int memberNumber = content.getInt(index++);
                                     activity.memberList.clear();
+
                                     for (int i = 0; i < memberNumber; i++) {
                                         String username = content.getString(index++);
                                         String nickname = content.getString(index++);
                                         boolean admin = content.getBoolean(index++);
                                         activity.memberList.add(new Member(nickname, admin));
+                                        // 房间管理员为本人，开启上传图片选项
+                                        if (admin && activity.user.getUsername().equals(username)) {
+                                            activity.isAdmin = true;
+                                            if (activity.uploadPicItem != null) {
+                                                // 已获取选项
+                                                activity.uploadPicItem.setVisible(true);
+                                            }
+                                        }
                                     }
                                     // 更新成员列表
                                     activity.memberAdapter.notifyDataSetChanged();
@@ -597,9 +639,9 @@ public class RoomActivity extends BaseActivity {
                             int roomId = content.getInt(index++);
                             String username = content.getString(index++);
 
-                            if (roomId != activity.roomId) { // 判断房间id
+                            if (roomId != activity.room.getId()) { // 判断房间id
                                 MyLog.d(TAG, "接收到无效的绘制线段，房间id错误");
-                            } else if (username == activity.username) {
+                            } else if (username == activity.user.getUsername()) {
                                 MyLog.d(TAG, "接收到无效的绘制线段，用户名重复");
                             } else { // 绘制线段
                                 int pointNumber = content.getInt(index++);
@@ -649,6 +691,73 @@ public class RoomActivity extends BaseActivity {
                                 case Protocol.UPLOAD_PIC_FAIL: { // 禁止上传图片
                                     showToast("服务器禁止传输图片");
                                     MyLog.d(TAG, "服务器禁止传输图片");
+                                    break;
+                                }
+                            }
+                        }
+                        case Protocol.BG_PIC_PUSH: { // 背景图片推送
+                            int code = content.getInt(0);
+                            switch (code) {
+                                case Protocol.BG_PIC_PUSH_ASK: { // 请求传输
+                                    try {
+                                        // 打开文件流
+                                        File image = new File(new URI(activity.imageUri.toString()));
+                                        if (image.exists()) {
+                                            image.delete();
+                                        }
+                                        image.createNewFile();
+                                        activity.fos = new FileOutputStream(image);
+                                        // 回复确认接收背景图片
+                                        JSONArray sendContent = new JSONArray();
+                                        sendContent.put(Protocol.BG_PIC_PUSH_OK);
+                                        Protocol sendProtocol = new Protocol(Protocol.BG_PIC_PUSH, System.currentTimeMillis(), sendContent);
+                                        CommunicationController.getInstance(activity).sendProtocol(sendProtocol);
+                                        // 开启等待进度条
+                                        activity.receiveBgPicDialog = LoadingDialogUtils.showDialog(activity, "正在更新背景图片...", false);
+                                    } catch (URISyntaxException | IOException e) {
+                                        MyLog.e(TAG, Log.getStackTraceString(e));
+                                        // 发送拒绝接收背景图片
+                                        JSONArray sendContent = new JSONArray();
+                                        sendContent.put(Protocol.BG_PIC_PUSH_FAIL);
+                                        Protocol sendProtocol = new Protocol(Protocol.BG_PIC_PUSH, System.currentTimeMillis(), sendContent);
+                                        CommunicationController.getInstance(activity).sendProtocol(sendProtocol);
+                                    }
+                                    break;
+                                }
+                                case Protocol.BG_PIC_PUSH_CONTINUE: { // 继续传输文件
+                                    int len = content.getInt(1);
+                                    String bytesStr = content.getString(2);
+                                    if (activity.fos != null) {
+                                        try {
+                                            byte[] fileBytes = bytesStr.getBytes("ISO-8859-1");
+                                            activity.fos.write(fileBytes, 0, fileBytes.length);
+                                            activity.fos.flush();
+                                        } catch (IOException e) {
+                                            MyLog.e(TAG, Log.getStackTraceString(e));
+                                            // 关闭进度条
+                                            LoadingDialogUtils.closeDialog(activity.receiveBgPicDialog);
+                                        }
+                                    }
+                                    break;
+                                }
+                                case Protocol.BG_PIC_PUSH_FINISH: { // 传输文件结束
+                                    if (activity.fos != null) {
+                                        try {
+                                            activity.fos.close();
+                                        } catch (IOException e) {
+                                            MyLog.e(TAG, Log.getStackTraceString(e));
+                                        }
+                                        // 设置图片背景
+                                        try {
+                                            InputStream is = activity.getContentResolver().openInputStream(activity.imageUri);
+                                            Bitmap imageBitmap = BitmapFactory.decodeStream(is);
+                                            activity.myPaintView.setBackground(new BitmapDrawable(imageBitmap));
+                                        } catch (FileNotFoundException e) {
+                                            MyLog.e(TAG, Log.getStackTraceString(e));
+                                        }
+                                        // 关闭进度条
+                                        LoadingDialogUtils.closeDialog(activity.receiveBgPicDialog);
+                                    }
                                     break;
                                 }
                             }

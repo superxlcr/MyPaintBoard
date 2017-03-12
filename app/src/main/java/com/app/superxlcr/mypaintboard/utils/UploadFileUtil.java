@@ -11,11 +11,8 @@ import com.app.superxlcr.mypaintboard.model.Protocol;
 
 import org.json.JSONArray;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.InputStream;
 
 /**
  * Created by superxlcr on 2017/3/10.
@@ -45,11 +42,10 @@ public class UploadFileUtil {
             }
         });
         try {
-            File picFile = new File(new URI(pic.toString()));
-            FileInputStream fis = new FileInputStream(picFile);
+            InputStream is = context.getApplicationContext().getContentResolver().openInputStream(pic);
             byte[] fileBytes = new byte[1024];
             int len;
-            while ((len = fis.read(fileBytes, 0, fileBytes.length)) > 0) {
+            while ((len = is.read(fileBytes, 0, fileBytes.length)) > 0) {
                 if (!flag) { // 传输被终止
                     return;
                 }
@@ -69,8 +65,6 @@ public class UploadFileUtil {
             content.put(Protocol.UPLOAD_PIC_FINISH);
             Protocol protocol = new Protocol(Protocol.UPLOAD_PIC, System.currentTimeMillis(), content);
             CommunicationController.getInstance(context).sendProtocol(protocol);
-        } catch (URISyntaxException e) {
-            MyLog.e(TAG, Log.getStackTraceString(e));
         } catch (IOException e) {
             MyLog.e(TAG, Log.getStackTraceString(e));
         } finally {
