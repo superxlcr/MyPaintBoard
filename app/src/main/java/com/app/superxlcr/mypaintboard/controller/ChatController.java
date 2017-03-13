@@ -75,10 +75,14 @@ public class ChatController {
 
     /**
      * 注册接受消息推送监听器
-     * @param context
-     * @param handler
+     * @param context 上下文
+     * @param handler 回调器
      */
     public void setReceiveMsgHandler(Context context, final Handler handler) {
+        // 清除旧监听器
+        if (receiveMsgListener != null) {
+            CommunicationController.getInstance(context).removeListener(receiveMsgListener);
+        }
         // 连接服务器
         CommunicationController.getInstance(context).connectServer();
         // 注册监听器

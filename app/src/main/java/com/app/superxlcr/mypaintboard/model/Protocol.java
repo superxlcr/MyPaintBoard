@@ -12,7 +12,7 @@ public class Protocol {
 
 	// 服务器端口
 	public static final int PORT = 9999;
-	// TODO 心跳包间隔
+	// 心跳包间隔
 	public static long HEART_BEAT_PERIOD = 5000;
 
 	// 指令类型
@@ -116,7 +116,7 @@ public class Protocol {
 	public static final int GET_DRAW_LIST = DRAW_PUSH + 1;
 	public static final int GET_DRAW_LIST_SUCCESS = 0;
 	public static final int GET_DRAW_LIST_WRONG_ROOM_ID = GET_DRAW_LIST_SUCCESS + 1; // 错误的房间id
-	public static final int GET_DRAW_LIST_UNKONW_PRO = GET_DRAW_LIST_WRONG_ROOM_ID + 1; // 未知错误
+	public static final int GET_DRAW_LIST_UNKNOW_PRO = GET_DRAW_LIST_WRONG_ROOM_ID + 1; // 未知错误
 
 	// 登录过期推送
 	// push:
@@ -155,6 +155,19 @@ public class Protocol {
 	public static final int BG_PIC_PUSH_CONTINUE = BG_PIC_PUSH_FAIL + 1; // 继续传输
 	public static final int BG_PIC_PUSH_FINISH = BG_PIC_PUSH_CONTINUE + 1; // 完成传输
 
+	// 清空画板
+	// c to s: 
+	// s to c: stateCode
+	public static final int CLEAR_DRAW = BG_PIC_PUSH + 1;
+	// stateCode
+	public static final int CLEAR_DRAW_SUCCESS = 0; // 成功
+	public static final int CLEAR_DRAW_NOT_ADMIN = CLEAR_DRAW_SUCCESS + 1; // 非管理员
+	public static final int CLEAR_DRAW_WRONG_ROOM_ID = CLEAR_DRAW_NOT_ADMIN + 1; // 房间id错误
+	
+	// 清空画板推送
+	// push: roomId
+	public static final int CLEAR_DRAW_PUSH = CLEAR_DRAW + 1;
+	
 	// 协议：指令 + 时间戳（防重复功能） + 内容
 
 	public static final String ORDER = "order";
@@ -273,6 +286,9 @@ public class Protocol {
 		case GET_DRAW_LIST:
 			orderStr = "GET_DRAW_LIST";
 			break;
+		case LOGIN_TIME_OUT_PUSH:
+			orderStr = "LOGIN_TIME_OUT_PUSH";
+			break;
 		case HEART_BEAT:
 			orderStr = "HEART_BEAT";
 			break;
@@ -281,6 +297,12 @@ public class Protocol {
 			break;
 		case BG_PIC_PUSH:
 			orderStr = "BG_PIC_PUSH";
+			break;
+		case CLEAR_DRAW:
+			orderStr = "CLEAR_DRAW";
+			break;
+		case CLEAR_DRAW_PUSH:
+			orderStr = "CLEAR_DRAW_PUSH";
 			break;
 		default:
 			break;

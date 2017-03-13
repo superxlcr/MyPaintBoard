@@ -57,6 +57,10 @@ public class MemberController {
      * @param handler 用于回调消息
      */
     public void setReceiveHandler(Context context, final Handler handler) {
+        // 清除旧监听器
+        if (receiveListener != null) {
+            CommunicationController.getInstance(context).removeListener(receiveListener);
+        }
         // 连接服务器
         CommunicationController.getInstance(context).connectServer();
         // 注册监听器

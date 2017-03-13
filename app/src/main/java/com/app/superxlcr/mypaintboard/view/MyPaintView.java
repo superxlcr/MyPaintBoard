@@ -63,6 +63,20 @@ public class MyPaintView extends View {
     private Handler handler = null;
 
     /**
+     * 清空屏幕
+     */
+    public void clearDraw() {
+        // 设置背景为白色
+        setBackgroundColor(Color.WHITE);
+        // 清空笔画
+        Paint paint = new Paint();
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        cacheCanvas.drawPaint(paint);
+        // 刷新画面
+        invalidate();
+    }
+
+    /**
      * 绘制线段
      *
      * @param line 线段

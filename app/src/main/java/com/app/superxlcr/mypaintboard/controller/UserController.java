@@ -60,6 +60,10 @@ public class UserController {
      * @param handler 用于回调消息
      */
     public void setLoginTimeOutPushHandler(Context context, final Handler handler) {
+        // 清除旧监听器
+        if (loginTimeOutPushListener != null) {
+            CommunicationController.getInstance(context).removeListener(loginTimeOutPushListener);
+        }
         // 连接服务器
         CommunicationController.getInstance(context).connectServer();
         // 注册监听器

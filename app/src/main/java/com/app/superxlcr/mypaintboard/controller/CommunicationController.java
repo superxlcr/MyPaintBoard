@@ -123,11 +123,9 @@ public class CommunicationController {
                             while ((jsonString = reader.readLine()) != null) {
                                 try {
                                     Protocol protocol = new Protocol(jsonString);
-                                    if (jsonString.length() != 48) // 48 ： means heart beat
-                                        MyLog.d(TAG, "len :" + jsonString.length() + "\n" + jsonString + "\n" + Thread.currentThread());
                                     // 打印非心跳包的信息
                                     if (protocol.getOrder() != Protocol.HEART_BEAT) {
-                                        MyLog.d(TAG, "len :" + jsonString.length() + "\n" + protocol.toString());
+                                        MyLog.d(TAG, "Receive\nlen :" + jsonString.length() + "\n" + protocol.toString());
                                     }
                                     // 分发处理协议内容
                                     for (ProtocolListener listener : listenerList) {
@@ -223,6 +221,10 @@ public class CommunicationController {
             writer.write(protocol.getJsonStr());
             writer.newLine();
             writer.flush();
+            // 打印非心跳包的信息
+            if (protocol.getOrder() != Protocol.HEART_BEAT) {
+                MyLog.d(TAG, "Send\nlen :" + protocol.getJsonStr().length() + "\n" + protocol.toString());
+            }
             return true;
         } catch (IOException e) {
             MyLog.e(TAG, Log.getStackTraceString(e));

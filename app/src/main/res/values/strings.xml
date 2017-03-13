@@ -22,7 +22,6 @@
     
     <string name="send">发送</string>
     <string name="trigger_button">聊\n天\n界\n面</string>
-    <string name="upload_pic">设置背景图片</string>
     <string name="admin">管理员</string>
     
     <string name="paint_color">画笔颜色</string>
@@ -38,6 +37,9 @@
     <string name="yellow">黄</string>
     <string name="paint">画笔</string>
     <string name="eraser">擦除</string>
-    
+
+    <string name="upload_pic">设置背景图片</string>
+    <string name="clear_draw">清空屏幕</string>
+
     <string name="dummy">-1</string>
 </resources>

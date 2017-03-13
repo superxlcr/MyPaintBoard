@@ -87,8 +87,9 @@ public class RoomActivity extends BaseActivity {
     private CascadeLayout cascadeLayout;
     private TextView triggerView;
 
-    // 上传图片选项
+    // 特殊选项
     private MenuItem uploadPicItem;
+    private MenuItem clearDrawItem;
 
     // 成员相关
     private ListView memberListView;
@@ -157,9 +158,11 @@ public class RoomActivity extends BaseActivity {
         myPaintView = (MyPaintView) findViewById(R.id.my_paint_view);
         myPaintView.setHandler(handler);
         myPaintView.setRoomId(room.getId());
+
         // 设置监听器
         DrawController.getInstance().setReceiveDrawHandler(this, handler);
         DrawController.getInstance().setReceiveBgPicHandler(this, handler);
+        DrawController.getInstance().setClearDrawPushHandler(this, handler);
 
 //        // 获取旧线段
         DrawController.getInstance().getDrawList(this, handler, System.currentTimeMillis(), room.getId());
@@ -230,12 +233,15 @@ public class RoomActivity extends BaseActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_room_activity, menu);
-        // 一般情况下隐藏这个选项
+        // 非管理员情况下隐藏这个选项
         uploadPicItem = menu.findItem(R.id.upload_pic);
+        clearDrawItem = menu.findItem(R.id.clear_draw);
         if (!isAdmin) {
             uploadPicItem.setVisible(false);
+            clearDrawItem.setVisible(false);
         } else {
             uploadPicItem.setVisible(true);
+            clearDrawItem.setVisible(true);
         }
 
         return true;
@@ -294,6 +300,9 @@ public class RoomActivity extends BaseActivity {
             case R.id.upload_pic: // 上传图片
                 // 请求传输图片
                 DrawController.getInstance().askUploadPic(this, handler);
+                break;
+            case R.id.clear_draw: // 清空屏幕
+                DrawController.getInstance().clearDraw(this, handler);
                 break;
         }
         return true;
@@ -598,6 +607,10 @@ public class RoomActivity extends BaseActivity {
                                                 // 已获取选项
                                                 activity.uploadPicItem.setVisible(true);
                                             }
+                                            if (activity.clearDrawItem != null) {
+                                                // 已获取选项
+                                                activity.clearDrawItem.setVisible(true);
+                                            }
                                         }
                                     }
                                     // 更新成员列表
@@ -673,7 +686,7 @@ public class RoomActivity extends BaseActivity {
                                     MyLog.d(TAG, "房间id错误，无法同步绘制消息");
                                     break;
                                 }
-                                case Protocol.GET_DRAW_LIST_UNKONW_PRO: { // 未知错误，无法同步绘制消息
+                                case Protocol.GET_DRAW_LIST_UNKNOW_PRO: { // 未知错误，无法同步绘制消息
                                     MyLog.d(TAG, "未知错误，无法同步绘制消息");
                                     break;
                                 }
@@ -694,6 +707,7 @@ public class RoomActivity extends BaseActivity {
                                     break;
                                 }
                             }
+                            break;
                         }
                         case Protocol.BG_PIC_PUSH: { // 背景图片推送
                             int code = content.getInt(0);
@@ -713,7 +727,7 @@ public class RoomActivity extends BaseActivity {
                                         Protocol sendProtocol = new Protocol(Protocol.BG_PIC_PUSH, System.currentTimeMillis(), sendContent);
                                         CommunicationController.getInstance(activity).sendProtocol(sendProtocol);
                                         // 开启等待进度条
-                                        activity.receiveBgPicDialog = LoadingDialogUtils.showDialog(activity, "正在更新背景图片...", false);
+                                        activity.receiveBgPicDialog = LoadingDialogUtils.showDialog(activity, "更新背景中...", false);
                                     } catch (URISyntaxException | IOException e) {
                                         MyLog.e(TAG, Log.getStackTraceString(e));
                                         // 发送拒绝接收背景图片
@@ -761,6 +775,32 @@ public class RoomActivity extends BaseActivity {
                                     break;
                                 }
                             }
+                            break;
+                        }
+                        case Protocol.CLEAR_DRAW: {
+                            int stateCode = content.getInt(0);
+                            switch (stateCode) {
+                                case Protocol.CLEAR_DRAW_SUCCESS: { // 清空成功
+                                    activity.myPaintView.clearDraw();
+                                    break;
+                                }
+                                case Protocol.CLEAR_DRAW_NOT_ADMIN: { // 非管理员
+                                    showToast("只有管理员才能清空屏幕");
+                                    MyLog.e(TAG, "非管理员出现清空选项");
+                                    break;
+                                }
+                                case Protocol.CLEAR_DRAW_WRONG_ROOM_ID: { // 错误的房间id
+                                    showToast("清空屏幕出现错误");
+                                    MyLog.e(TAG, "房间id错误，清空屏幕失败");
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case Protocol.CLEAR_DRAW_PUSH: {
+                            showToast("房间管理员请求清空屏幕");
+                            activity.myPaintView.clearDraw();
+                            break;
                         }
                     }
                 } catch (JSONException e) {

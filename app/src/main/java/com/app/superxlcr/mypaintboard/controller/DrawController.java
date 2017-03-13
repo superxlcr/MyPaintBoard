@@ -37,6 +37,8 @@ public class DrawController {
     private ProtocolListener getDrawListListener; // 获取绘制条目用监听器
     private ProtocolListener uploadPicListener; // 上传图片用监听器
     private ProtocolListener receiveBgPicListener; // 接收背景图片推送监听器
+    private ProtocolListener clearDrawListener; // 清除线段绘制监听器
+    private ProtocolListener clearDrawPushListener; // 清除线段绘制推送监听器
 
     private DrawController() {
         sendDrawListener = null;
@@ -100,6 +102,10 @@ public class DrawController {
      * @param handler 用于接收回调消息
      */
     public void setReceiveDrawHandler(Context context, final Handler handler) {
+        // 清除旧监听器
+        if (receiveDrawListener != null) {
+            CommunicationController.getInstance(context).removeListener(receiveDrawListener);
+        }
         // 连接服务器
         CommunicationController.getInstance(context).connectServer();
         // 注册监听器
@@ -192,6 +198,10 @@ public class DrawController {
      * @param handler 用于回调消息处理器
      */
     public void setReceiveBgPicHandler(Context context, final Handler handler) {
+        // 清除旧监听器
+        if (receiveBgPicListener != null) {
+            CommunicationController.getInstance(context).removeListener(receiveBgPicListener);
+        }
         // 连接服务器
         CommunicationController.getInstance(context).connectServer();
         // 注册监听器
@@ -210,5 +220,66 @@ public class DrawController {
             }
         };
         CommunicationController.getInstance(context).registerListener(receiveBgPicListener);
+    }
+
+    /**
+     * 清除房间绘制线段
+     * @param context 上下文
+     * @param handler 回调处理器
+     * @return 是否发送成功
+     */
+    public boolean clearDraw(final Context context, final Handler handler) {
+        JSONArray jsonArray = new JSONArray();
+        Protocol sendProtocol = new Protocol(Protocol.CLEAR_DRAW, System.currentTimeMillis(), jsonArray);
+        // 注册监听器
+        clearDrawListener = new ProtocolListener() {
+            @Override
+            public boolean onReceive(Protocol protocol) {
+                int order = protocol.getOrder();
+                if (order == Protocol.CLEAR_DRAW) {
+                    // 通过handler返回协议信息
+                    Message message = handler.obtainMessage();
+                    message.obj = protocol;
+                    handler.sendMessage(message);
+                    // 移除监听器
+                    CommunicationController.getInstance(context).removeListener(clearDrawListener);
+                    return true;
+                }
+                return false;
+            }
+        };
+        CommunicationController.getInstance(context).registerListener(clearDrawListener);
+        // 发送信息
+        return CommunicationController.getInstance(context).sendProtocol(sendProtocol);
+    }
+
+    /**
+     * 设置清除绘制线段推送回调器
+     * @param context 上下文
+     * @param handler 回调器
+     */
+    public void setClearDrawPushHandler(Context context, final Handler handler) {
+        // 清除旧监听器
+        if (clearDrawPushListener != null) {
+            CommunicationController.getInstance(context).removeListener(clearDrawPushListener);
+        }
+        // 连接服务器
+        CommunicationController.getInstance(context).connectServer();
+        // 注册监听器
+        clearDrawPushListener = new ProtocolListener() {
+            @Override
+            public boolean onReceive(Protocol protocol) {
+                int order = protocol.getOrder();
+                if (order == Protocol.CLEAR_DRAW_PUSH) {
+                    // 通过handler返回协议信息
+                    Message message = handler.obtainMessage();
+                    message.obj = protocol;
+                    handler.sendMessage(message);
+                    return true;
+                }
+                return false;
+            }
+        };
+        CommunicationController.getInstance(context).registerListener(clearDrawPushListener);
     }
 }
