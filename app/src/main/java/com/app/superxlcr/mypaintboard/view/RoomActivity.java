@@ -380,7 +380,6 @@ public class RoomActivity extends BaseActivity {
     private void cropPhoto(Uri uri) {
         Intent intent = new Intent("com.android.camera.action.CROP");
         intent.setDataAndType(uri, "image/*");
-        // 保持裁剪比例
         intent.putExtra("scale", true);
         // 裁剪比例
         intent.putExtra("aspectX", myPaintView.getWidth());
