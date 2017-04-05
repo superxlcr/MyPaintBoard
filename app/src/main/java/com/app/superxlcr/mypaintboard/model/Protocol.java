@@ -11,7 +11,7 @@ import org.json.*;
 public class Protocol {
 
 	// 服务器端口
-	public static final int PORT = 9999;
+	public static final int PORT = 29999;
 	// 心跳包间隔
 	public static long HEART_BEAT_PERIOD = 5000;
 

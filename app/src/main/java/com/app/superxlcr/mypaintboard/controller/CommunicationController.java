@@ -34,6 +34,7 @@ public class CommunicationController {
 
     // 服务器IP
     public static String SERVER_IP = "123.207.118.193";
+//    public static String SERVER_IP = "192.168.191.1";
 
     private static String TAG = CommunicationController.class.getSimpleName();
 
@@ -54,6 +55,7 @@ public class CommunicationController {
     private List<ProtocolListener> listenerList; // 监听器列表
     private Socket socket; // 通信对象，若为null则无连接
     private Timer timer; // 心跳包计时器任务
+    private BufferedWriter writer;
 
     private CommunicationController(Context context) {
         this.context = context.getApplicationContext();
@@ -84,6 +86,7 @@ public class CommunicationController {
                 // 连接服务器
                 try {
                     socket = new Socket(SERVER_IP, Protocol.PORT);
+                    writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
                     MyLog.d(TAG, "连接服务器成功");
 
                     // 定时器子线程，开始发送心跳包
@@ -92,17 +95,18 @@ public class CommunicationController {
                         @Override
                         public void run() {
                             try {
-                                if (socket != null) {
-                                    // 发送心跳信息
-                                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
-                                    JSONArray jsonArray = new JSONArray();
-                                    Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(), jsonArray);
-                                    writer.write(sendProtocol.getJsonStr());
-                                    writer.newLine();
-                                    writer.flush();
-                                } else {
-                                    // 连接中断终止任务
-                                    timer.cancel();
+                                synchronized (writer) {
+                                    if (socket != null) {
+                                        // 发送心跳信息
+                                        JSONArray jsonArray = new JSONArray();
+                                        Protocol sendProtocol = new Protocol(Protocol.HEART_BEAT, System.currentTimeMillis(), jsonArray);
+                                        writer.write(sendProtocol.getJsonStr());
+                                        writer.newLine();
+                                        writer.flush();
+                                    } else {
+                                        // 连接中断终止任务
+                                        timer.cancel();
+                                    }
                                 }
                             } catch (IOException e) {
                                 // 出现错误，终止定时器，关闭连接
@@ -216,13 +220,14 @@ public class CommunicationController {
             return false;
         }
         try {
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
-            writer.write(protocol.getJsonStr());
-            writer.newLine();
-            writer.flush();
-            // 打印非心跳包的信息
-            if (protocol.getOrder() != Protocol.HEART_BEAT) {
-                MyLog.d(TAG, "Send\nlen :" + protocol.getJsonStr().length() + "\n" + protocol.toString());
+            synchronized (writer) {
+                writer.write(protocol.getJsonStr());
+                writer.newLine();
+                writer.flush();
+                // 打印非心跳包的信息
+                if (protocol.getOrder() != Protocol.HEART_BEAT) {
+                    MyLog.d(TAG, "Send\nlen :" + protocol.getJsonStr().length() + "\n" + protocol.toString());
+                }
             }
             return true;
         } catch (IOException e) {
