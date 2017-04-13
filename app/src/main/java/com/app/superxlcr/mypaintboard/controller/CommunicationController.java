@@ -169,6 +169,10 @@ public class CommunicationController {
         MyLog.d(TAG, "已清除socket连接");
         if (socket != null) {
             try {
+                // 关闭输入输出流
+                socket.shutdownInput();
+                socket.shutdownOutput();
+                // 关闭连接
                 socket.close();
             } catch (IOException e) {
                 MyLog.e(TAG, Log.getStackTraceString(e));
