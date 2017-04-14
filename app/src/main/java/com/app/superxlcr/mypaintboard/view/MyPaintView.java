@@ -21,7 +21,9 @@ import com.app.superxlcr.mypaintboard.model.Point;
 import com.app.superxlcr.mypaintboard.utils.MyLog;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by superxlcr on 2017/1/22.
@@ -35,23 +37,28 @@ public class MyPaintView extends View {
     private static final int POINT_ARRAY_SIZE = 10; // 每组发送的点数大小
     private static final int REPEAT_TIMES = 5; // 发送失败重新发送次数
     private static final int FAIL_RELAX_TIME = 100; // 发送失败间隔时间
+    private static final int ERASER_WIDTH = 40; // 橡皮擦宽度
 
-    // 点击坐标
-    private float lastX = 0, lastY = 0;
     // 画板大小
     private int width = 0, height = 0;
-    // 绘制路径
-    private Path path;
-    // 画笔
-    private Paint paint;
+
     // 画笔颜色
     private int paintColor;
     // 画笔宽度
     private float paintWidth;
+
     // 图片缓冲内存
     private Bitmap cacheBitmap;
     // 画布缓冲区
     private Canvas cacheCanvas;
+
+    // 本地未确认线段缓存区
+    private Map<Long, Line> localLineList;
+    // 图片缓冲内存
+    private Bitmap localLineCacheBitmap;
+    // 画布缓冲区
+    private Canvas localLineCacheCanvas;
+
     // 是否擦除模式
     private boolean isEraser;
 
@@ -72,6 +79,8 @@ public class MyPaintView extends View {
         Paint paint = new Paint();
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         cacheCanvas.drawPaint(paint);
+        // 清空本地未确认线段
+        localLineList.clear();
         // 刷新画面
         invalidate();
     }
@@ -82,7 +91,7 @@ public class MyPaintView extends View {
      * @param line 线段
      */
     public void drawLine(Line line) {
-        MyLog.d(TAG, "draw line!");
+        MyLog.d(TAG, "draw line to cache!");
         Paint linePaint = new Paint(Paint.DITHER_FLAG);
         linePaint.setColor(line.getColor()); // 颜色
         linePaint.setStyle(Paint.Style.STROKE); // 实心
@@ -91,6 +100,9 @@ public class MyPaintView extends View {
         linePaint.setAntiAlias(true);
         linePaint.setDither(true);
         if (line.isEraser()) {
+            // 透明色，橡皮擦固定大小
+            linePaint.setColor(Color.TRANSPARENT);
+            linePaint.setStrokeWidth(ERASER_WIDTH);
             linePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         }
         List<Point> list = line.getPointList();
@@ -120,9 +132,6 @@ public class MyPaintView extends View {
      */
     public void setPaintColor(int color) {
         paintColor = color;
-        if (!isEraser) {
-            paint.setColor(color);
-        }
     }
 
     /**
@@ -132,8 +141,29 @@ public class MyPaintView extends View {
      */
     public void setPaintWidth(float width) {
         paintWidth = width;
-        if (!isEraser) {
-            paint.setStrokeWidth(width);
+    }
+
+    /**
+     * 确认本地线段
+     *
+     * @param time 线段协议发送时间
+     * @param draw 是否绘制到缓存区
+     */
+    public void confirmLocalLine(long time, boolean draw) {
+        List<Long> deleteTimeList = new ArrayList<>();
+        for (Long keyTime : localLineList.keySet()) {
+            if (keyTime <= time) {
+                // 绘制到缓存区
+                if (draw) {
+                    drawLine(localLineList.get(keyTime));
+                }
+                // 已确认线段
+                deleteTimeList.add(keyTime);
+            }
+        }
+        // 移除相应线段
+        for (Long ketTime : deleteTimeList) {
+            localLineList.remove(ketTime);
         }
     }
 
@@ -143,16 +173,6 @@ public class MyPaintView extends View {
 
     public void setEraser(boolean eraser) {
         isEraser = eraser;
-        // 擦除模式
-        if (isEraser) {
-            paint.setColor(Color.TRANSPARENT);
-            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-            paint.setStrokeWidth(40);
-        } else {
-            paint.setColor(paintColor);
-            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_OVER));
-            paint.setStrokeWidth(paintWidth);
-        }
     }
 
     public int getRoomId() {
@@ -184,22 +204,17 @@ public class MyPaintView extends View {
             // 初始化画布
             cacheCanvas = new Canvas();
             cacheCanvas.setBitmap(cacheBitmap);
-            // 初始化路径
-            path = new Path();
+            // 初始化本地线段有序map
+            localLineList = new LinkedHashMap<>();
+            // 初始化本地线段画布
+            localLineCacheBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            localLineCacheCanvas = new Canvas();
+            localLineCacheCanvas.setBitmap(localLineCacheBitmap);
             // 初始化画笔
-            paint = new Paint(Paint.DITHER_FLAG); // 防抖动
             paintColor = Color.BLACK;
-            paint.setColor(paintColor); // 颜色
-            paint.setStyle(Paint.Style.STROKE); // 实心
             paintWidth = 1;
-            paint.setStrokeWidth(paintWidth); // 长度
-            // 反锯齿
-            paint.setAntiAlias(true);
-            paint.setDither(true);
             // 画笔模式
             isEraser = false;
-            // 后画的线段在上方
-            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_OVER));
             // 初始化点数列表
             pointList = new ArrayList<>();
         }
@@ -210,18 +225,12 @@ public class MyPaintView extends View {
         float x = event.getX(), y = event.getY();
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN: { // 第一次点击用于记录坐标
-                lastX = x;
-                lastY = y;
-                path.moveTo(x, y);
                 // 清空并添加新的点
                 pointList.clear();
                 pointList.add(new Point(x, y));
                 break;
             }
             case MotionEvent.ACTION_MOVE: { // 移动的同时绘制线段
-                path.quadTo(lastX, lastY, x, y);
-                lastX = x;
-                lastY = y;
                 // 添加新的点，判断是否需要发送
                 pointList.add(new Point(x, y));
                 // 发送绘制线段
@@ -233,10 +242,11 @@ public class MyPaintView extends View {
                     for (int i = 0; i < pointList.size(); i++) {
                         points[i] = pointList.get(i);
                     }
-                    Line line = new Line(points, paint.getColor(), paint.getStrokeWidth(), isEraser, width, height);
+                    Line line = new Line(points, paintColor, paintWidth, isEraser, width, height);
                     // 断线重发机制
                     int counter = 0;
-                    while (!DrawController.getInstance().sendDraw(getContext(), handler, System.currentTimeMillis(), roomId, line) && counter < REPEAT_TIMES) {
+                    long time = System.currentTimeMillis();
+                    while (!DrawController.getInstance().sendDraw(getContext(), handler, time, roomId, line) && counter < REPEAT_TIMES) {
                         counter++;
                         try {
                             Thread.sleep(FAIL_RELAX_TIME);
@@ -248,11 +258,14 @@ public class MyPaintView extends View {
                     for (int i = 0; i < POINT_ARRAY_SIZE - 1; i++) {
                         pointList.remove(0);
                     }
+                    // 本地线段添加
+                    localLineList.put(time, line);
+                    // 刷新界面
+                    invalidate();
                 }
                 break;
             }
             case MotionEvent.ACTION_UP: { // 把线段绘制到缓存中
-                path.reset();
                 // 绘制剩余的线段
                 if (handler == null) {
                     Toast.makeText(getContext(), "还没有设置Handler!", Toast.LENGTH_SHORT).show();
@@ -261,10 +274,11 @@ public class MyPaintView extends View {
                 for (int i = 0; i < pointList.size(); i++) {
                     points[i] = pointList.get(i);
                 }
-                Line line = new Line(points, paint.getColor(), paint.getStrokeWidth(), isEraser, width, height);
+                Line line = new Line(points, paintColor, paintWidth, isEraser, width, height);
                 // 断线重发机制
                 int counter = 0;
-                while (!DrawController.getInstance().sendDraw(getContext(), handler, System.currentTimeMillis(), roomId, line) && counter < REPEAT_TIMES) {
+                long time = System.currentTimeMillis();
+                while (!DrawController.getInstance().sendDraw(getContext(), handler, time, roomId, line) && counter < REPEAT_TIMES) {
                     counter++;
                     try {
                         Thread.sleep(FAIL_RELAX_TIME);
@@ -274,20 +288,57 @@ public class MyPaintView extends View {
                 }
                 // 清空列表
                 pointList.clear();
+                // 本地线段添加
+                localLineList.put(time, line);
+                // 刷新界面
+                invalidate();
                 break;
             }
         }
-        invalidate();
         return true;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
+        // 清空本地线段缓存
+        Paint clearPaint = new Paint();
+        clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        localLineCacheCanvas.drawPaint(clearPaint);
+        // 绘制本地未确认线段
+        for (Line line : localLineList.values()) {
+            Paint linePaint = new Paint(Paint.DITHER_FLAG);
+            linePaint.setColor(line.getColor()); // 颜色
+            linePaint.setStyle(Paint.Style.STROKE); // 实心
+            linePaint.setStrokeWidth((float) line.getPaintWidth()); // 长度
+            // 反锯齿
+            linePaint.setAntiAlias(true);
+            linePaint.setDither(true);
+            if (line.isEraser()) {
+                linePaint.setColor(Color.TRANSPARENT);
+                linePaint.setStrokeWidth(ERASER_WIDTH);
+                linePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+            }
+            List<Point> list = line.getPointList();
+            Path linePath = new Path();
+            // 本地线段不需要缩放
+            float lineLastX = (float) list.get(0).getX();
+            float lineLastY = (float) list.get(0).getY();
+            linePath.moveTo(lineLastX, lineLastY);
+            for (int i = 1; i < list.size(); i++) {
+                float x = (float) list.get(i).getX();
+                float y = (float) list.get(i).getY();
+                linePath.quadTo(lineLastX, lineLastY, x, y);
+                lineLastX = x;
+                lineLastY = y;
+            }
+            // 绘制到缓冲区
+            localLineCacheCanvas.drawPath(linePath, linePaint);
+        }
         Paint bmpPaint = new Paint();
-        // 绘制当前的轨迹到缓冲区
-        cacheCanvas.drawPath(path, paint);
         // 绘制之前的缓存轨迹
         canvas.drawBitmap(cacheBitmap, 0, 0, bmpPaint);
+        // 绘制本地线段缓存
+        canvas.drawBitmap(localLineCacheBitmap, 0, 0, bmpPaint);
     }
 
     public MyPaintView(Context context) {

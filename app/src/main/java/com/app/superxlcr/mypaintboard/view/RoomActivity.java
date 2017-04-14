@@ -631,17 +631,24 @@ public class RoomActivity extends BaseActivity {
                         }
                         case Protocol.DRAW: { // 绘制反馈
                             int stateCode = content.getInt(0);
+                            long time = protocol.getTime();
                             switch (stateCode) {
                                 case Protocol.DRAW_SUCCESS: {
                                     MyLog.d(TAG, "发送绘制线段成功");
+                                    // 确认成功
+                                    activity.myPaintView.confirmLocalLine(time, true);
                                     break;
                                 }
                                 case Protocol.DRAW_UNKNOW_PRO: { // 未知错误
                                     MyLog.d(TAG, "发生未知错误，发送绘制线段失败");
+                                    // 确认失败
+                                    activity.myPaintView.confirmLocalLine(time, false);
                                     break;
                                 }
                                 case Protocol.DRAW_WRONG_ROOM_ID: { // 房间id错误
                                     MyLog.d(TAG, "房间id错误，发送绘制线段失败");
+                                    // 确认失败
+                                    activity.myPaintView.confirmLocalLine(time, false);
                                     break;
                                 }
                             }
