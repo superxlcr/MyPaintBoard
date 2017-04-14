@@ -34,7 +34,7 @@ public class MyPaintView extends View {
 
     private static final String TAG = MyPaintView.class.getSimpleName();
 
-    private static final int POINT_ARRAY_SIZE = 10; // 每组发送的点数大小
+    private static final int POINT_ARRAY_SIZE = 5; // 每组发送的点数大小
     private static final int REPEAT_TIMES = 5; // 发送失败重新发送次数
     private static final int FAIL_RELAX_TIME = 100; // 发送失败间隔时间
     private static final int ERASER_WIDTH = 40; // 橡皮擦宽度
